@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}Create Chatbot - Business Chatbot Platform{% endblock %}
+
+{% block styles %}
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    
+    .form-container {
+        background-color: var(--card-bg);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+    
+    .form-section {
+        padding: 2rem;
+        border-bottom: 1px solid var(--card-border);
+    }
+    
+    .form-section:last-child {
+        border-bottom: none;
+    }
+    
+    .form-section-title {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        color: var(--primary);
+        position: relative;
+    }
+    
+    .form-section-title i {
+        margin-right: 0.75rem;
+        font-size: 1.25rem;
+    }
+    
+    .form-section-title::after {
+        content: '';
+        position: absolute;
+        bottom: -0.5rem;
+        left: 0;
+        width: 50px;
+        height: 3px;
+        background: linear-gradient(to right, var(--primary), var(--secondary));
+        border-radius: 3px;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-text {
+        font-size: 0.85rem;
+        color: var(--body-color);
+        opacity: 0.7;
+        margin-top: 0.25rem;
+    }
+    
+    .faq-item {
+        background-color: rgba(var(--bs-primary-rgb), 0.03);
+        padding: 1.5rem;
+        border-radius: var(--border-radius);
+        margin-bottom: 1rem;
+        position: relative;
+        transition: var(--transition);
+    }
+    
+    .faq-item:hover {
+        background-color: rgba(var(--bs-primary-rgb), 0.05);
+    }
+    
+    .remove-faq {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        color: var(--danger);
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: var(--transition);
+    }
+    
+    .remove-faq:hover {
+        background-color: rgba(var(--bs-danger-rgb), 0.1);
+    }
+    
+    .btn-add-faq {
+        padding: 0.5rem 1rem;
+        border-style: dashed;
+        border-width: 2px;
+        font-weight: 500;
+    }
+    
+    .btn-add-faq:hover {
+        background-color: rgba(var(--bs-primary-rgb), 0.05);
+    }
+    
+    .form-actions {
+        padding: 1.5rem 2rem;
+        background-color: rgba(var(--bs-light-rgb), 0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .btn-icon {
+        display: inline-flex;
+        align-items: center;
+    }
+    
+    .btn-icon i {
+        margin-right: 0.5rem;
+    }
+    
+    /* Animation for adding new FAQ */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .faq-new {
+        animation: fadeInUp 0.3s ease-out forwards;
+    }
+    
+    .intro-card {
+        background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.05), rgba(var(--bs-secondary-rgb), 0.05));
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border-left: 4px solid var(--primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="page-header">
+        <h2 class="mb-2">Create New Chatbot</h2>
+        <p class="text-muted">Configure your AI business assistant</p>
+    </div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show mb-4" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <div class="intro-card fade-in">
+        <h5 class="mb-3"><i class="bi bi-lightbulb"></i> Getting Started</h5>
+        <p>Complete the form below to create your custom AI business assistant. The more information you provide, the better your chatbot will be able to assist your customers.</p>
+        <p class="mb-0">Required fields are marked with an asterisk (*)</p>
+    </div>
+    
+    <form method="POST" action="{{ url_for('save_config') }}">
+        <div class="form-container fade-in">
+            <!-- Basic Information -->
+            <div class="form-section">
+                <h4 class="form-section-title">
+                    <i class="bi bi-info-circle"></i> Basic Information
+                </h4>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="business_name" class="form-label">Business Name*</label>
+                        <input type="text" class="form-control" id="business_name" name="business_name" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="business_type" class="form-label">Business Type*</label>
+                        <select class="form-select" id="business_type" name="business_type" required>
+                            <option value="" selected disabled>Select a business type</option>
+                            {% for type in business_types %}
+                                <option value="{{ type }}">{{ type }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="business_description" class="form-label">Business Description*</label>
+                    <textarea class="form-control" id="business_description" name="business_description" rows="3" required></textarea>
+                    <div class="form-text">Provide a brief description of your business.</div>
+                </div>
+            </div>
+            
+            <!-- Business Details -->
+            <div class="form-section">
+                <h4 class="form-section-title">
+                    <i class="bi bi-building"></i> Business Details
+                </h4>
+                <div class="mb-3">
+                    <label for="business_hours" class="form-label">Business Hours</label>
+                    <textarea class="form-control" id="business_hours" name="business_hours" rows="2"></textarea>
+                    <div class="form-text">E.g., Monday-Friday: 9am-5pm, Saturday: 10am-3pm, Sunday: Closed</div>
+                </div>
+                <div class="mb-3">
+                    <label for="services" class="form-label">Services Offered</label>
+                    <textarea class="form-control" id="services" name="services" rows="3"></textarea>
+                    <div class="form-text">List the main services or products your business offers.</div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location" name="location">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="contact_info" class="form-label">Contact Information</label>
+                        <input type="text" class="form-control" id="contact_info" name="contact_info">
+                        <div class="form-text">Phone, email, website, etc.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Booking Information -->
+            <div class="form-section">
+                <h4 class="form-section-title">
+                    <i class="bi bi-calendar-check"></i> Booking Information
+                </h4>
+                <div class="mb-3">
+                    <label for="availability" class="form-label">Availability</label>
+                    <textarea class="form-control" id="availability" name="availability" rows="2"></textarea>
+                    <div class="form-text">Describe when appointments/bookings are typically available.</div>
+                </div>
+                <div class="mb-3">
+                    <label for="booking_process" class="form-label">Booking Process</label>
+                    <textarea class="form-control" id="booking_process" name="booking_process" rows="3"></textarea>
+                    <div class="form-text">Explain how customers can book appointments or make reservations.</div>
+                </div>
+            </div>
+            
+            <!-- FAQs -->
+            <div class="form-section">
+                <h4 class="form-section-title">
+                    <i class="bi bi-question-circle"></i> Frequently Asked Questions
+                </h4>
+                <p class="text-muted mb-4">Add common questions and answers about your business to help the AI assistant respond accurately.</p>
+                
+                <div id="faq-container"></div>
+                
+                <button type="button" class="btn btn-outline-primary btn-add-faq mt-3" onclick="addFAQ()">
+                    <i class="bi bi-plus"></i> Add FAQ
+                </button>
+            </div>
+            
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-icon">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+                <button type="submit" class="btn btn-primary btn-icon">
+                    <i class="bi bi-robot"></i> Create Chatbot
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function addFAQ() {
+        const container = document.getElementById('faq-container');
+        const faqItem = document.createElement('div');
+        faqItem.className = 'faq-item faq-new';
+        faqItem.innerHTML = `
+            <div class="remove-faq" onclick="removeFAQ(this)">
+                <i class="bi bi-x-lg"></i>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Question</label>
+                <input type="text" class="form-control" name="faq_question[]" placeholder="Enter a common question">
+            </div>
+            <div class="mb-0">
+                <label class="form-label">Answer</label>
+                <textarea class="form-control" name="faq_answer[]" rows="2" placeholder="Provide a clear answer"></textarea>
+            </div>
+        `;
+        container.appendChild(faqItem);
+    }
+    
+    function removeFAQ(element) {
+        const faqItem = element.closest('.faq-item');
+        faqItem.style.opacity = '0';
+        faqItem.style.transform = 'translateY(-20px)';
+        setTimeout(() => {
+            faqItem.remove();
+        }, 300);
+    }
+    
+    // Add at least one FAQ by default
+    document.addEventListener('DOMContentLoaded', function() {
+        addFAQ();
+    });
+</script>
+{% endblock %} 

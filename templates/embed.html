@@ -1,0 +1,425 @@
+{% extends "base.html" %}
+
+{% block title %}Embed Chatbot - {{ chatbot.business_name }}{% endblock %}
+
+{% block styles %}
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    
+    .embed-container {
+        background-color: var(--card-bg);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .embed-section {
+        margin-bottom: 2.5rem;
+    }
+    
+    .embed-section:last-child {
+        margin-bottom: 0;
+    }
+    
+    .embed-section-title {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        color: var(--primary);
+        position: relative;
+    }
+    
+    .embed-section-title i {
+        margin-right: 0.75rem;
+        font-size: 1.25rem;
+    }
+    
+    .embed-section-title::after {
+        content: '';
+        position: absolute;
+        bottom: -0.5rem;
+        left: 0;
+        width: 50px;
+        height: 3px;
+        background: linear-gradient(to right, var(--primary), var(--secondary));
+        border-radius: 3px;
+    }
+    
+    .code-block {
+        background-color: rgba(var(--bs-dark-rgb), 0.03);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        position: relative;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+    }
+    
+    .code-block pre {
+        margin-bottom: 0;
+        white-space: pre-wrap;
+        word-break: break-all;
+        color: var(--text-primary);
+        font-family: monospace;
+        font-size: 0.9rem;
+    }
+    
+    .copy-btn {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+        color: var(--primary);
+        border: none;
+        border-radius: 4px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .copy-btn:hover {
+        background-color: rgba(var(--bs-primary-rgb), 0.2);
+    }
+    
+    .preview-container {
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: 1rem;
+        margin-top: 2rem;
+        background-color: rgba(var(--bs-light-rgb), 0.05);
+    }
+    
+    .preview-header {
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .preview-header i {
+        color: var(--primary);
+    }
+    
+    .preview-frame {
+        width: 100%;
+        height: 500px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+    }
+    
+    .options-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .option-card {
+        flex: 1;
+        min-width: 200px;
+        background-color: rgba(var(--bs-light-rgb), 0.05);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: 1.25rem;
+        transition: var(--transition);
+    }
+    
+    .option-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow);
+    }
+    
+    .option-title {
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .option-description {
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+        color: var(--text-secondary);
+    }
+    
+    .back-btn {
+        margin-top: 1.5rem;
+    }
+    
+    /* Animation for copied notification */
+    @keyframes fadeInOut {
+        0% { opacity: 0; }
+        20% { opacity: 1; }
+        80% { opacity: 1; }
+        100% { opacity: 0; }
+    }
+    
+    .copy-notification {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: var(--primary);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        display: none;
+        animation: fadeInOut 2s ease-in-out forwards;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="page-header">
+        <h2 class="mb-2">Embed Your Chatbot</h2>
+        <p class="text-muted">Add {{ chatbot.business_name }}'s AI assistant to your website</p>
+    </div>
+    
+    <div class="embed-container fade-in">
+        <div class="embed-section">
+            <h4 class="embed-section-title">
+                <i class="bi bi-code-slash"></i> Embed Options
+            </h4>
+            <p class="mb-4">Choose how you want to integrate the chatbot into your website:</p>
+            
+            <div class="options-container">
+                <div class="option-card">
+                    <div class="option-title">
+                        <i class="bi bi-chat-right-text"></i> Chat Widget
+                    </div>
+                    <div class="option-description">
+                        Adds a floating chat button in the corner of your website that opens the chatbot when clicked.
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="embedType" id="widgetOption" value="widget" checked>
+                        <label class="form-check-label" for="widgetOption">
+                            Use chat widget
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="option-card">
+                    <div class="option-title">
+                        <i class="bi bi-window"></i> Inline Frame
+                    </div>
+                    <div class="option-description">
+                        Embeds the chatbot directly into your webpage as an inline element.
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="embedType" id="inlineOption" value="inline">
+                        <label class="form-check-label" for="inlineOption">
+                            Use inline frame
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="option-card">
+                    <div class="option-title">
+                        <i class="bi bi-link-45deg"></i> Direct Link
+                    </div>
+                    <div class="option-description">
+                        Provides a direct URL to the chatbot that you can link to from your website.
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="embedType" id="linkOption" value="link">
+                        <label class="form-check-label" for="linkOption">
+                            Use direct link
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="embed-section" id="widgetCodeSection">
+            <h4 class="embed-section-title">
+                <i class="bi bi-code"></i> Widget Code
+            </h4>
+            <p class="mb-3">Copy and paste this code into your website's HTML, just before the closing <code>&lt;/body&gt;</code> tag:</p>
+            
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyToClipboard('widgetCode')">
+                    <i class="bi bi-clipboard"></i> Copy
+                </button>
+                <pre id="widgetCode">&lt;script&gt;
+    (function() {
+        // Create widget container
+        var chatWidget = document.createElement('div');
+        chatWidget.id = 'ai-chat-widget';
+        chatWidget.style.position = 'fixed';
+        chatWidget.style.bottom = '20px';
+        chatWidget.style.right = '20px';
+        chatWidget.style.zIndex = '9999';
+        document.body.appendChild(chatWidget);
+        
+        // Create chat button
+        var chatButton = document.createElement('div');
+        chatButton.id = 'ai-chat-button';
+        chatButton.innerHTML = '&lt;svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"&gt;&lt;path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/&gt;&lt;path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/&gt;&lt;/svg&gt;';
+        chatButton.style.width = '60px';
+        chatButton.style.height = '60px';
+        chatButton.style.borderRadius = '50%';
+        chatButton.style.backgroundColor = '#4361ee';
+        chatButton.style.color = 'white';
+        chatButton.style.display = 'flex';
+        chatButton.style.alignItems = 'center';
+        chatButton.style.justifyContent = 'center';
+        chatButton.style.cursor = 'pointer';
+        chatButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        chatButton.style.transition = 'all 0.3s ease';
+        chatWidget.appendChild(chatButton);
+        
+        // Create chat iframe container (hidden by default)
+        var chatContainer = document.createElement('div');
+        chatContainer.id = 'ai-chat-container';
+        chatContainer.style.position = 'fixed';
+        chatContainer.style.bottom = '90px';
+        chatContainer.style.right = '20px';
+        chatContainer.style.width = '350px';
+        chatContainer.style.height = '500px';
+        chatContainer.style.boxShadow = '0 5px 40px rgba(0,0,0,0.16)';
+        chatContainer.style.borderRadius = '16px';
+        chatContainer.style.overflow = 'hidden';
+        chatContainer.style.display = 'none';
+        chatContainer.style.transition = 'all 0.3s ease';
+        chatWidget.appendChild(chatContainer);
+        
+        // Create chat iframe
+        var chatIframe = document.createElement('iframe');
+        chatIframe.src = '{{ chat_url }}';
+        chatIframe.style.width = '100%';
+        chatIframe.style.height = '100%';
+        chatIframe.style.border = 'none';
+        chatContainer.appendChild(chatIframe);
+        
+        // Toggle chat visibility on button click
+        chatButton.addEventListener('click', function() {
+            if (chatContainer.style.display === 'none') {
+                chatContainer.style.display = 'block';
+                setTimeout(function() {
+                    chatButton.innerHTML = '&lt;svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"&gt;&lt;path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/&gt;&lt;/svg&gt;';
+                }, 100);
+            } else {
+                chatContainer.style.display = 'none';
+                chatButton.innerHTML = '&lt;svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"&gt;&lt;path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/&gt;&lt;path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/&gt;&lt;/svg&gt;';
+            }
+        });
+    })();
+&lt;/script&gt;</pre>
+            </div>
+        </div>
+        
+        <div class="embed-section" id="inlineCodeSection" style="display: none;">
+            <h4 class="embed-section-title">
+                <i class="bi bi-code"></i> Inline Frame Code
+            </h4>
+            <p class="mb-3">Copy and paste this code where you want the chatbot to appear on your webpage:</p>
+            
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyToClipboard('inlineCode')">
+                    <i class="bi bi-clipboard"></i> Copy
+                </button>
+                <pre id="inlineCode">&lt;iframe src="{{ chat_url }}" width="100%" height="600px" style="border: 1px solid #eaeaea; border-radius: 12px;"&gt;&lt;/iframe&gt;</pre>
+            </div>
+        </div>
+        
+        <div class="embed-section" id="linkCodeSection" style="display: none;">
+            <h4 class="embed-section-title">
+                <i class="bi bi-link-45deg"></i> Direct Link
+            </h4>
+            <p class="mb-3">Share this link with your users or create a button that links to it:</p>
+            
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyToClipboard('linkCode')">
+                    <i class="bi bi-clipboard"></i> Copy
+                </button>
+                <pre id="linkCode">{{ chat_url }}</pre>
+            </div>
+            
+            <p class="mt-4 mb-3">HTML button code example:</p>
+            
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyToClipboard('buttonCode')">
+                    <i class="bi bi-clipboard"></i> Copy
+                </button>
+                <pre id="buttonCode">&lt;a href="{{ chat_url }}" target="_blank" style="display: inline-block; background-color: #4361ee; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: 500;"&gt;Chat with our AI Assistant&lt;/a&gt;</pre>
+            </div>
+        </div>
+        
+        <div class="preview-container">
+            <div class="preview-header">
+                <i class="bi bi-eye"></i> Preview
+            </div>
+            <iframe src="{{ chat_url }}" class="preview-frame"></iframe>
+        </div>
+        
+        <div class="d-flex justify-content-between mt-4">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-icon">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+    
+    <div class="copy-notification" id="copyNotification">
+        <i class="bi bi-check-circle"></i> Copied to clipboard!
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const embedOptions = document.querySelectorAll('input[name="embedType"]');
+        const widgetCodeSection = document.getElementById('widgetCodeSection');
+        const inlineCodeSection = document.getElementById('inlineCodeSection');
+        const linkCodeSection = document.getElementById('linkCodeSection');
+        
+        // Toggle code sections based on selected option
+        embedOptions.forEach(option => {
+            option.addEventListener('change', function() {
+                if (this.value === 'widget') {
+                    widgetCodeSection.style.display = 'block';
+                    inlineCodeSection.style.display = 'none';
+                    linkCodeSection.style.display = 'none';
+                } else if (this.value === 'inline') {
+                    widgetCodeSection.style.display = 'none';
+                    inlineCodeSection.style.display = 'block';
+                    linkCodeSection.style.display = 'none';
+                } else if (this.value === 'link') {
+                    widgetCodeSection.style.display = 'none';
+                    inlineCodeSection.style.display = 'none';
+                    linkCodeSection.style.display = 'block';
+                }
+            });
+        });
+    });
+    
+    function copyToClipboard(elementId) {
+        const element = document.getElementById(elementId);
+        const textArea = document.createElement('textarea');
+        textArea.value = element.textContent;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        // Show notification
+        const notification = document.getElementById('copyNotification');
+        notification.style.display = 'block';
+        
+        // Hide notification after 2 seconds
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 2000);
+    }
+</script>
+{% endblock %} 

@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Business Chatbot Platform{% endblock %}
+
+{% block styles %}
+<style>
+    .auth-container {
+        max-width: 450px;
+        margin: 80px auto;
+        padding: 0;
+    }
+    
+    .auth-card {
+        border: none;
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: var(--shadow);
+    }
+    
+    .auth-header {
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: white;
+        padding: 2rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .auth-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+        z-index: 0;
+    }
+    
+    .auth-header .logo {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .auth-header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .auth-header p {
+        opacity: 0.9;
+        margin-bottom: 0;
+    }
+    
+    .auth-body {
+        padding: 2rem;
+    }
+    
+    .input-group {
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    
+    .input-group-text {
+        background-color: transparent;
+        border-right: none;
+        color: var(--primary);
+    }
+    
+    .form-control {
+        border-left: none;
+        padding-left: 0;
+    }
+    
+    .form-control:focus + .input-group-text,
+    .input-group-text + .form-control:focus {
+        border-color: var(--primary-light);
+        box-shadow: none;
+    }
+    
+    .btn-auth {
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border: none;
+        color: white;
+        padding: 0.8rem;
+        font-weight: 500;
+        border-radius: var(--border-radius-sm);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-auth:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+    }
+    
+    .register-link {
+        text-align: center;
+        margin-top: 1.5rem;
+    }
+    
+    .register-link a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .register-link a:hover {
+        text-decoration: underline;
+    }
+    
+    .auth-divider {
+        display: flex;
+        align-items: center;
+        margin: 1.5rem 0;
+    }
+    
+    .auth-divider::before,
+    .auth-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background-color: var(--input-border);
+    }
+    
+    .auth-divider span {
+        padding: 0 1rem;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container auth-container fade-in">
+    <div class="card auth-card">
+        <div class="auth-header">
+            <div class="logo">
+                <i class="bi bi-robot fs-1"></i>
+                <h1>Business Chatbot</h1>
+                <p>Sign in to manage your AI chatbots</p>
+            </div>
+        </div>
+        
+        <div class="auth-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST" action="{{ url_for('login') }}">
+                <div class="input-group">
+                    <span class="input-group-text border-end-0"><i class="bi bi-person"></i></span>
+                    <input type="text" class="form-control border-start-0" id="username" name="username" placeholder="Enter your username" required>
+                </div>
+                
+                <div class="input-group">
+                    <span class="input-group-text border-end-0"><i class="bi bi-lock"></i></span>
+                    <input type="password" class="form-control border-start-0" id="password" name="password" placeholder="Enter your password" required>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-auth">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
+                    </button>
+                </div>
+            </form>
+            
+            <div class="register-link">
+                <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Business Chatbot Platform{% endblock %}
+
+{% block styles %}
+<style>
+    .dashboard-header {
+        background-color: var(--card-bg);
+        padding: 2rem;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .dashboard-header::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 150px;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.05) 0%, rgba(76, 201, 240, 0) 100%);
+        border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        z-index: 0;
+    }
+    
+    .dashboard-welcome {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .dashboard-welcome h2 {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .dashboard-welcome p {
+        color: var(--body-color);
+        opacity: 0.8;
+        margin-bottom: 0;
+    }
+    
+    .chatbot-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .chatbot-card {
+        background-color: var(--card-bg);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .chatbot-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow);
+    }
+    
+    .chatbot-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(to right, var(--primary), var(--secondary));
+        transition: var(--transition);
+    }
+    
+    .card-header {
+        background-color: transparent;
+        border-bottom: 1px solid var(--card-border);
+        padding: 1.25rem 1.5rem;
+        font-weight: 600;
+    }
+    
+    .card-body {
+        padding: 1.5rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .card-text {
+        color: var(--body-color);
+        opacity: 0.8;
+        margin-bottom: 1rem;
+        flex-grow: 1;
+    }
+    
+    .badge {
+        font-size: 0.7rem;
+        padding: 0.35em 0.65em;
+        font-weight: 500;
+    }
+    
+    .badge-primary {
+        background-color: var(--primary);
+        color: white;
+    }
+    
+    .chatbot-actions {
+        margin-top: 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .btn-sm {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        flex: 1;
+    }
+    
+    .btn-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .btn-icon i {
+        margin-right: 0.2rem;
+    }
+    
+    @media (max-width: 576px) {
+        .btn-sm {
+            padding: 0.25rem 0.4rem;
+            font-size: 0.7rem;
+        }
+        
+        .btn-icon i {
+            margin-right: 0.1rem;
+        }
+        
+        .chatbot-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background-color: var(--card-bg);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .empty-icon {
+        font-size: 4rem;
+        color: var(--primary);
+        opacity: 0.2;
+        margin-bottom: 1.5rem;
+    }
+    
+    .empty-state h3 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state p {
+        color: var(--body-color);
+        opacity: 0.8;
+        margin-bottom: 1.5rem;
+    }
+    
+    .modal-content {
+        border: none;
+        border-radius: var(--border-radius);
+        overflow: hidden;
+    }
+    
+    .modal-header {
+        background-color: var(--primary);
+        color: white;
+        border: none;
+    }
+    
+    .modal-footer {
+        border-top: 1px solid var(--card-border);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show mb-4" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="dashboard-header fade-in">
+        <div class="row align-items-center dashboard-welcome">
+            <div class="col-md-8">
+                <h2>Welcome, {{ current_user.username }}</h2>
+                <p>Manage your AI chatbots from this dashboard</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{{ url_for('admin') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i> Create New Chatbot
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <h4 class="mb-4">Your Chatbots</h4>
+    
+    {% if chatbots %}
+        <div class="chatbot-grid fade-in">
+            {% for chatbot in chatbots %}
+                <div class="chatbot-card" style="animation-delay: {{ loop.index0 * 0.1 }}s;">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>{{ chatbot.business_name }}</span>
+                        <span class="badge bg-primary">{{ chatbot.business_type }}</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">{{ chatbot.business_description[:100] + '...' if chatbot.business_description|length > 100 else chatbot.business_description }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">Created: {{ chatbot.created_at.strftime('%Y-%m-%d') }}</small>
+                        </div>
+                        <div class="chatbot-actions">
+                            <a href="{{ url_for('chat', config_id=chatbot.config_id) }}" class="btn btn-sm btn-outline-primary btn-icon" target="_blank">
+                                <i class="bi bi-chat-dots"></i> Chat
+                            </a>
+                            <a href="{{ url_for('edit_chatbot', config_id=chatbot.config_id) }}" class="btn btn-sm btn-outline-secondary btn-icon">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-info btn-icon" data-bs-toggle="modal" data-bs-target="#embedModal{{ chatbot.id }}">
+                                <i class="bi bi-code-square"></i> Embed
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-icon" data-bs-toggle="modal" data-bs-target="#deleteModal{{ chatbot.id }}">
+                                <i class="bi bi-trash"></i> Del
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Embed Modal -->
+                <div class="modal fade" id="embedModal{{ chatbot.id }}" tabindex="-1" aria-labelledby="embedModalLabel{{ chatbot.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="embedModalLabel{{ chatbot.id }}">Embed Chatbot</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Share your chatbot using the direct URL:</p>
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control" id="chatUrl{{ chatbot.id }}" value="{{ request.host_url }}chat/{{ chatbot.config_id }}" readonly>
+                                    <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard('chatUrl{{ chatbot.id }}')">
+                                        <i class="bi bi-clipboard"></i> Copy
+                                    </button>
+                                </div>
+                                
+                                <p class="mt-4">Embed the chatbot on your website with this code:</p>
+                                <div class="input-group">
+                                    <textarea class="form-control" id="embedCode{{ chatbot.id }}" rows="4" readonly>&lt;iframe src="{{ request.host_url }}chat/{{ chatbot.config_id }}" width="400" height="600" style="border:none;box-shadow:0 0 10px rgba(0,0,0,0.1);border-radius:10px;"&gt;&lt;/iframe&gt;</textarea>
+                                    <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard('embedCode{{ chatbot.id }}')">
+                                        <i class="bi bi-clipboard"></i> Copy
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Delete Modal -->
+                <div class="modal fade" id="deleteModal{{ chatbot.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ chatbot.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="deleteModalLabel{{ chatbot.id }}">Confirm Delete</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Are you sure you want to delete the chatbot for <strong>{{ chatbot.business_name }}</strong>?</p>
+                                <p class="text-danger mb-0"><small>This action cannot be undone.</small></p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <form action="{{ url_for('delete_chatbot', config_id=chatbot.config_id) }}" method="POST">
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="bi bi-trash me-1"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state fade-in">
+            <i class="bi bi-robot empty-icon"></i>
+            <h3>No chatbots yet</h3>
+            <p>Create your first AI chatbot to get started</p>
+            <a href="{{ url_for('admin') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i> Create New Chatbot
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function copyToClipboard(elementId) {
+        const element = document.getElementById(elementId);
+        element.select();
+        element.setSelectionRange(0, 99999); // For mobile devices
+        
+        navigator.clipboard.writeText(element.value)
+            .then(() => {
+                // Show a temporary "Copied!" tooltip or message
+                const button = element.nextElementSibling;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="bi bi-check"></i> Copied!';
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                }, 2000);
+            })
+            .catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+    }
+</script>
+{% endblock %} 
