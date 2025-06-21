@@ -132,7 +132,7 @@ if not api_key:
 # Final fallback to a hardcoded key for development/testing only
 if not api_key:
     print("WARNING: Using fallback API key. This is not secure for production!")
-    api_key = "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"
+    api_key = "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"
     print(f"Fallback API key starts with: {api_key[:10]}...")
     # Set it in environment for other modules
     os.environ["OPENROUTER_API_KEY"] = api_key
