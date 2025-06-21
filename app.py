@@ -9,8 +9,31 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# Load environment variables
+# Debug: Print all environment variables to help diagnose issues
+print("=== ENVIRONMENT VARIABLES ===")
+for key, value in os.environ.items():
+    # Print key but mask sensitive values
+    if 'KEY' in key or 'SECRET' in key or 'PASSWORD' in key:
+        print(f"{key}: ***MASKED***")
+    else:
+        print(f"{key}: {value}")
+print("============================")
+
+# Load environment variables from .env file
 load_dotenv()
+
+# Load environment variables from service.json if available
+try:
+    with open('service.json', 'r') as f:
+        service_config = json.load(f)
+        if 'environments' in service_config and 'production' in service_config['environments']:
+            env_vars = service_config['environments']['production']['env']
+            for key, value in env_vars.items():
+                if key not in os.environ:
+                    os.environ[key] = value
+                    print(f"Loaded {key} from service.json")
+except (FileNotFoundError, json.JSONDecodeError) as e:
+    print(f"Could not load variables from service.json: {str(e)}")
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -77,12 +100,35 @@ Book by calling us or through our website!"
 
 Remember: You represent {business_name} and should uphold their professional standards while keeping responses SHORT, STRUCTURED, and VISUALLY APPEALING."""
 
-# Get API key from environment
+# Get API key from environment with multiple fallback options
 api_key = os.environ.get("OPENROUTER_API_KEY")
 
-# Validate API key
+# Debug: Check if API key is found
+print(f"API key found: {'Yes' if api_key else 'No'}")
+
+# Fallback to service.json if available
 if not api_key:
-    raise ValueError("API key not found. Please set OPENROUTER_API_KEY as an environment variable.")
+    try:
+        # First try direct service.json
+        with open('service.json', 'r') as f:
+            service_config = json.load(f)
+            if 'environments' in service_config and 'production' in service_config['environments']:
+                api_key = service_config['environments']['production']['env'].get('OPENROUTER_API_KEY')
+            else:
+                api_key = service_config.get('OPENROUTER_API_KEY')
+            if api_key:
+                print("Using API key from service.json")
+                # Set it in environment for other modules
+                os.environ["OPENROUTER_API_KEY"] = api_key
+    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
+        print(f"Could not load API key from service.json: {str(e)}")
+
+# Final fallback to a hardcoded key for development/testing only
+if not api_key:
+    print("WARNING: Using fallback API key. This is not secure for production!")
+    api_key = "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"
+    # Set it in environment for other modules
+    os.environ["OPENROUTER_API_KEY"] = api_key
 
 # OpenRouter API endpoint
 api_url = "https://openrouter.ai/api/v1/chat/completions"
@@ -91,7 +137,7 @@ api_url = "https://openrouter.ai/api/v1/chat/completions"
 headers = {
     "Authorization": f"Bearer {api_key}",
     "Content-Type": "application/json",
-    "HTTP-Referer": os.environ.get("APP_URL", "https://business-chatbot-app.up.railway.app"),
+    "HTTP-Referer": os.environ.get("APP_URL", "https://web-production-7dd9.up.railway.app"),
     "X-Title": "Business Assistant Bot"
 }
 
@@ -454,6 +500,13 @@ def process_chat():
         if not chatbot:
             return jsonify({"error": "Business configuration not found"}), 404
         
+        # Verify API key is available
+        if not api_key:
+            return jsonify({
+                "error": "API key not configured. Please contact the administrator.",
+                "response": "I'm sorry, but I'm unable to process your request at the moment. The service is experiencing technical difficulties. Please try again later or contact support."
+            }), 503
+        
         # Get the system prompt for this business
         system_prompt = chatbot.system_prompt
         
@@ -482,7 +535,8 @@ def process_chat():
             response = requests.post(api_url, headers=headers, json=payload)
             response.raise_for_status()  # Raise exception for HTTP errors
         except requests.exceptions.RequestException as api_error:
-            raise
+            print(f"API error: {str(api_error)}")
+            return jsonify({"error": "API request failed", "response": "I'm sorry, but I'm having trouble connecting to my knowledge base right now. Please try again in a moment."}), 503
         
         # Parse response
         response_data = response.json()
