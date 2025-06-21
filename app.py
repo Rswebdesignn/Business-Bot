@@ -8,6 +8,7 @@ from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_cors import CORS
 
 # Debug: Print all environment variables to help diagnose issues
 print("=== ENVIRONMENT VARIABLES ===")
@@ -37,6 +38,7 @@ except (FileNotFoundError, json.JSONDecodeError) as e:
 
 # Initialize Flask app
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))  # Get from env or generate random
 
 # Configure database
@@ -480,6 +482,15 @@ def chat(config_id):
     
     return render_template('chat.html', config=chatbot, config_id=config_id)
 
+@app.route('/chat', methods=['OPTIONS'])
+def chat_options():
+    """Handle CORS preflight requests for the chat endpoint."""
+    response = jsonify({})
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return response
+
 @app.route('/chat', methods=['POST'])
 def process_chat():
     """Process chat messages from the frontend."""
@@ -549,12 +560,26 @@ def process_chat():
         if len(conversations[session_id]) > 11:  # system prompt + 10 messages
             conversations[session_id] = [conversations[session_id][0]] + conversations[session_id][-10:]
         
-        return jsonify({"response": assistant_message})
+        # Create response with proper headers for iframe compatibility
+        response = jsonify({"response": assistant_message})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
     
     except requests.exceptions.RequestException as e:
         return jsonify({"error": f"API request failed: {str(e)}"}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/reset/<config_id>', methods=['OPTIONS'])
+def reset_conversation_options(config_id):
+    """Handle CORS preflight requests for the reset endpoint."""
+    response = jsonify({})
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return response
 
 @app.route('/reset/<config_id>', methods=['POST'])
 def reset_conversation(config_id):
@@ -599,6 +624,15 @@ def admin_logout():
     session.pop('is_admin', None)
     flash('Admin logout successful', 'success')
     return redirect(url_for('login'))
+
+@app.route('/health')
+def health_check():
+    """Simple health check endpoint."""
+    return jsonify({
+        "status": "healthy",
+        "api_key_configured": bool(api_key),
+        "timestamp": datetime.utcnow().isoformat()
+    })
 
 # Initialize database
 with app.app_context():
