@@ -107,6 +107,9 @@ api_key = os.environ.get("OPENROUTER_API_KEY")
 
 # Debug: Check if API key is found
 print(f"API key found: {'Yes' if api_key else 'No'}")
+if api_key:
+    print(f"API key starts with: {api_key[:10]}...")
+    print(f"API key length: {len(api_key)}")
 
 # Fallback to service.json if available
 if not api_key:
@@ -120,6 +123,7 @@ if not api_key:
                 api_key = service_config.get('OPENROUTER_API_KEY')
             if api_key:
                 print("Using API key from service.json")
+                print(f"Service.json API key starts with: {api_key[:10]}...")
                 # Set it in environment for other modules
                 os.environ["OPENROUTER_API_KEY"] = api_key
     except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
@@ -129,6 +133,7 @@ if not api_key:
 if not api_key:
     print("WARNING: Using fallback API key. This is not secure for production!")
     api_key = "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"
+    print(f"Fallback API key starts with: {api_key[:10]}...")
     # Set it in environment for other modules
     os.environ["OPENROUTER_API_KEY"] = api_key
 
@@ -142,6 +147,45 @@ headers = {
     "HTTP-Referer": os.environ.get("APP_URL", "https://web-production-7dd9.up.railway.app"),
     "X-Title": "Business Assistant Bot"
 }
+
+# Debug headers (masking sensitive info)
+debug_headers = headers.copy()
+debug_headers["Authorization"] = f"Bearer {api_key[:10]}..."
+print(f"OpenRouter API headers: {debug_headers}")
+
+def validate_openrouter_api_key():
+    """Validate the OpenRouter API key by making a simple test request."""
+    try:
+        test_payload = {
+            "model": "anthropic/claude-3-haiku",
+            "messages": [
+                {"role": "user", "content": "Hello"}
+            ],
+            "max_tokens": 10
+        }
+        
+        response = requests.post(api_url, headers=headers, json=test_payload, timeout=10)
+        
+        if response.status_code == 200:
+            print("✅ OpenRouter API key is valid")
+            return True
+        elif response.status_code == 401:
+            print("❌ OpenRouter API key is invalid (401 Unauthorized)")
+            return False
+        elif response.status_code == 429:
+            print("❌ OpenRouter API rate limit exceeded (429 Too Many Requests)")
+            return False
+        else:
+            print(f"❌ OpenRouter API error: {response.status_code} - {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ OpenRouter API validation failed: {str(e)}")
+        return False
+
+# Validate API key on startup
+print("Validating OpenRouter API key...")
+api_key_valid = validate_openrouter_api_key()
 
 # Store conversation history
 conversations = {}
@@ -543,11 +587,33 @@ def process_chat():
         
         # Make request to OpenRouter API
         try:
-            response = requests.post(api_url, headers=headers, json=payload)
+            print(f"Making OpenRouter API call to: {api_url}")
+            print(f"Headers: {headers}")
+            print(f"Payload: {json.dumps(payload, indent=2)}")
+            
+            response = requests.post(api_url, headers=headers, json=payload, timeout=30)
+            print(f"OpenRouter API response status: {response.status_code}")
+            print(f"OpenRouter API response headers: {dict(response.headers)}")
+            
+            if response.status_code != 200:
+                print(f"OpenRouter API error response: {response.text}")
+                # Fallback to a simple response when API is down
+                fallback_response = f"I'm sorry, but I'm experiencing technical difficulties (Error {response.status_code}). As a fallback, I can tell you that I'm the AI assistant for {chatbot.business_name}. How can I help you today?"
+                return jsonify({"response": fallback_response}), 200
+            
             response.raise_for_status()  # Raise exception for HTTP errors
+        except requests.exceptions.Timeout as timeout_error:
+            print(f"OpenRouter API timeout: {str(timeout_error)}")
+            fallback_response = f"I'm sorry, but the request is taking too long. As a fallback, I can tell you that I'm the AI assistant for {chatbot.business_name}. How can I help you today?"
+            return jsonify({"response": fallback_response}), 200
+        except requests.exceptions.ConnectionError as conn_error:
+            print(f"OpenRouter API connection error: {str(conn_error)}")
+            fallback_response = f"I'm sorry, but I'm having trouble connecting to my knowledge base. As a fallback, I can tell you that I'm the AI assistant for {chatbot.business_name}. How can I help you today?"
+            return jsonify({"response": fallback_response}), 200
         except requests.exceptions.RequestException as api_error:
-            print(f"API error: {str(api_error)}")
-            return jsonify({"error": "API request failed", "response": "I'm sorry, but I'm having trouble connecting to my knowledge base right now. Please try again in a moment."}), 503
+            print(f"OpenRouter API error: {str(api_error)}")
+            fallback_response = f"I'm sorry, but I'm having trouble connecting to my knowledge base right now. As a fallback, I can tell you that I'm the AI assistant for {chatbot.business_name}. How can I help you today?"
+            return jsonify({"response": fallback_response}), 200
         
         # Parse response
         response_data = response.json()
@@ -631,8 +697,44 @@ def health_check():
     return jsonify({
         "status": "healthy",
         "api_key_configured": bool(api_key),
+        "api_key_valid": api_key_valid if 'api_key_valid' in globals() else "unknown",
         "timestamp": datetime.utcnow().isoformat()
     })
+
+@app.route('/test-api')
+def test_api():
+    """Test the OpenRouter API connection."""
+    try:
+        # Simple test payload
+        test_payload = {
+            "model": "anthropic/claude-3-haiku",
+            "messages": [
+                {"role": "user", "content": "Hello, this is a test message."}
+            ],
+            "max_tokens": 50
+        }
+        
+        print(f"Testing OpenRouter API with key: {api_key[:10]}...")
+        response = requests.post(api_url, headers=headers, json=test_payload, timeout=10)
+        
+        if response.status_code == 200:
+            return jsonify({
+                "status": "success",
+                "message": "OpenRouter API is working correctly",
+                "response": response.json()
+            })
+        else:
+            return jsonify({
+                "status": "error",
+                "message": f"OpenRouter API returned status {response.status_code}",
+                "response": response.text
+            }), 400
+            
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"OpenRouter API test failed: {str(e)}"
+        }), 500
 
 # Initialize database
 with app.app_context():
