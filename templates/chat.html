@@ -504,8 +504,16 @@
                 isWaitingForResponse = true;
                 
                 try {
+                    // Get the current domain to make absolute URL
+                    const currentOrigin = window.location.origin;
+                    const chatEndpoint = `${currentOrigin}/chat`;
+                    
+                    console.log('Making API call to:', chatEndpoint);
+                    console.log('Config ID:', configId);
+                    console.log('Message:', userMessage);
+                    
                     // Send message to server
-                    const response = await fetch('/chat', {
+                    const response = await fetch(chatEndpoint, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -516,16 +524,22 @@
                         }),
                     });
                     
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+                    
                     if (!response.ok) {
-                        throw new Error('Network response was not ok');
+                        const errorText = await response.text();
+                        console.error('Response error:', errorText);
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
                     }
                     
                     const data = await response.json();
+                    console.log('Response data:', data);
                     
                     // Add bot response to chat
                     addBotMessage(data.response);
                 } catch (error) {
-                    console.error('Error:', error);
+                    console.error('Error details:', error);
                     addBotMessage("I'm sorry, I'm having trouble connecting to the server. Please try again later.");
                 } finally {
                     isWaitingForResponse = false;
