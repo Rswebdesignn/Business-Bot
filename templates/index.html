@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}BusinessAI - Modern AI Assistant Platform{% endblock %}
+
+{% block styles %}
+<style>
+    .hero-section {
+        min-height: calc(100vh - 72px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 50px 0;
+        position: relative;
+    }
+
+    .hero-badge {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        padding: 0.5rem 1.25rem;
+        border-radius: var(--radius-full);
+        font-size: 0.95rem;
+        font-weight: 500;
+        margin-bottom: 2rem;
+        display: inline-block;
+        color: var(--text-secondary);
+    }
+
+    .hero-title {
+        font-size: 4.5rem;
+        font-weight: 800;
+        letter-spacing: -2px;
+        line-height: 1.05;
+        margin-bottom: 1.5rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1.25rem;
+        color: var(--text-secondary);
+        max-width: 640px;
+        margin: 0 auto 3rem;
+        line-height: 1.6;
+    }
+
+    .status-dot {
+        width: 7px;
+        height: 7px;
+        background: var(--success);
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+    }
+
+    @media (max-width: 768px) {
+        .hero-section {
+            padding: 80px 0 50px;
+        }
+
+        .hero-title {
+            font-size: 2.25rem !important;
+            letter-spacing: -0.5px;
+        }
+
+        .hero-subtitle {
+            font-size: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .hero-badge {
+            font-size: 0.8rem;
+            padding: 0.35rem 0.85rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hero-section {
+            padding: 60px 0 40px;
+        }
+
+        .hero-title {
+            font-size: 1.85rem !important;
+        }
+
+        .hero-subtitle {
+            font-size: 0.92rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section text-center container">
+    <div class="reveal">
+        <span class="hero-badge">
+            <span class="status-dot"></span> Now with Telegram Agentic Mode
+        </span>
+        <h1 class="hero-title">Automate your <br><span class="text-gradient">Business Growth</span></h1>
+        <p class="hero-subtitle">The ultimate AI companion that doesn't just talk—it takes action. From support to
+            sales, supercharge your workflow with smarter agents.</p>
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 px-4 px-sm-0">
+            <a href="{{ url_for('register') }}" class="btn btn-premium">
+                <i class="bi bi-robot me-2"></i> Get Started Free
+            </a>
+            <a href="#features" class="btn btn-glass">
+                <i class="bi bi-stars me-2"></i> Explore Features
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Features Grid -->
+<section id="features" class="container py-5 mt-4">
+    <div class="text-center mb-5 reveal">
+        <h2 class="fw-bold mb-2">Powerful Features</h2>
+        <p class="text-muted" style="font-size: 1.05rem;">Everything you need to scale your customer experience.</p>
+    </div>
+
+    <div class="bento-grid reveal">
+        <!-- Smart Assistant -->
+        <div class="glass-card bento-item">
+            <div class="feature-icon-wrapper" style="background: #3b82f6;">
+                <i class="bi bi-cpu"></i>
+            </div>
+            <h3>Smart Assistant</h3>
+            <p>Adaptive AI that learns from every interaction.</p>
+            <div class="mt-3" style="font-size: 0.9rem; color: var(--text-secondary);">
+                <div class="d-flex align-items-center mb-2"><i class="bi bi-check2 text-gradient me-2"></i>Dynamic
+                    learning from inputs</div>
+                <div class="d-flex align-items-center mb-2"><i class="bi bi-check2 text-gradient me-2"></i>Intelligent
+                    intent recognition</div>
+                <div class="d-flex align-items-center mb-2"><i class="bi bi-check2 text-gradient me-2"></i>Context-aware
+                    conversations</div>
+            </div>
+        </div>
+
+        <!-- Agentic Mode (Large) -->
+        <div class="glass-card bento-item large">
+            <div>
+                <div class="feature-icon-wrapper">
+                    <i class="bi bi-cpu-fill"></i>
+                </div>
+                <h3>Agentic Mode (Telegram)</h3>
+                <p>Manage your entire business workflow directly through Telegram with our smart agentic engine.</p>
+                <div class="mt-3" style="font-size: 0.9rem; color: var(--text-secondary);">
+                    <div class="d-flex align-items-center mb-2"><i class="bi bi-check2 text-gradient me-2"></i>Smart
+                        Telegram instant notifications</div>
+                    <div class="d-flex align-items-center mb-2"><i class="bi bi-check2 text-gradient me-2"></i>One-click
+                        mobile appointment approval</div>
+                    <div class="d-flex align-items-center mb-2"><i class="bi bi-check2 text-gradient me-2"></i>Automated
+                        customer follow-ups via Bot</div>
+                    <div class="d-flex align-items-center mb-2"><i class="bi bi-check2 text-gradient me-2"></i>Real-time
+                        status sync to Dashboard</div>
+                </div>
+            </div>
+            <div class="mt-3 pt-2 border-top" style="border-color: var(--border) !important;">
+                <small class="text-gradient fw-bold" style="font-size: 0.85rem;">Enterprise Action Engine</small>
+            </div>
+        </div>
+
+        <!-- Telegram Integration -->
+        <div class="glass-card bento-item medium">
+            <div class="d-flex align-items-start gap-3">
+                <div class="feature-icon-wrapper" style="background: #0088cc;">
+                    <i class="bi bi-telegram"></i>
+                </div>
+                <div>
+                    <h3>Telegram Integration</h3>
+                    <p>Connect your chatbot to Telegram in seconds. Get instant notifications and manage appointments
+                        directly from your phone.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 24/7 Support -->
+        <div class="glass-card bento-item">
+            <div class="feature-icon-wrapper">
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <h3>24/7 Support</h3>
+            <p>Always active, never tired. Instant responses even at 3 AM.</p>
+        </div>
+
+        <!-- Smart Booking -->
+        <div class="glass-card bento-item">
+            <div class="feature-icon-wrapper">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+            <h3>Smart Booking</h3>
+            <p>Conflict-aware scheduling that feels human.</p>
+        </div>
+
+        <!-- Easy Embed -->
+        <div class="glass-card bento-item medium">
+            <div class="d-flex align-items-center gap-3">
+                <div class="feature-icon-wrapper" style="background: #ef4444;">
+                    <i class="bi bi-code-square"></i>
+                </div>
+                <div>
+                    <h3>One-Click Embed</h3>
+                    <p>Copy one line of script and your AI is live on any website. No coding required.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training -->
+        <div class="glass-card bento-item">
+            <div class="feature-icon-wrapper">
+                <i class="bi bi-brain"></i>
+            </div>
+            <h3>Custom Training</h3>
+            <p>Teach your AI your custom business knowledge.</p>
+        </div>
+
+        <!-- Analytics Hub -->
+        <div class="glass-card bento-item">
+            <div class="feature-icon-wrapper" style="background: #a855f7;">
+                <i class="bi bi-bar-chart-fill"></i>
+            </div>
+            <h3>Analytics Hub</h3>
+            <p>Track performance and engagement with detailed insights.</p>
+        </div>
+
+        <!-- Global Languages -->
+        <div class="glass-card bento-item">
+            <div class="feature-icon-wrapper" style="background: #10b981;">
+                <i class="bi bi-translate"></i>
+            </div>
+            <h3>Global Support</h3>
+            <p>Support customers in 100+ languages automatically.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="container py-5 my-4">
+    <div class="glass-card p-5 text-center reveal">
+        <h2 class="fw-bold mb-3">Ready to reach the next level?</h2>
+        <p class="text-muted mb-4 mx-auto" style="max-width: 480px; font-size: 1.05rem;">Join hundreds of businesses
+            using BusinessAI to automate their customer success.</p>
+        <a href="{{ url_for('register') }}" class="btn btn-premium">
+            <i class="bi bi-robot me-2"></i> Create Your Agent Now
+        </a>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const observerOptions = { threshold: 0.1 };
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('reveal');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+<!-- BPAFlow AI Chat Widget -->
+<script>
+    window.BPAFlowConfig = {
+        chatbot_id: "5e10eaa3",
+        position: "right",
+        primaryColor: "#7336ce",
+        launcherText: "",
+        icon: "bi-robot",
+        radius: "24px"
+    };
+</script>
+<script src="http://127.0.0.1:5000/static/js/embed.js" async></script>
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Chatbot - BusinessAI{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="page-header reveal">
+        <h2 class="fw-bold">Edit Chatbot</h2>
+        <p>Update the configuration for {{ chatbot.business_name }}</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show mb-3" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"
+            style="font-size: 0.6rem;"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('edit_chatbot', config_id=chatbot.config_id) }}">
+        <div class="form-container fade-in">
+            <!-- Basic Information -->
+            <div class="form-section">
+                <h4 class="form-section-title"><i class="bi bi-info-circle"></i> Basic Information</h4>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="business_name" class="form-label">Business Name *</label>
+                        <input type="text" class="form-control" id="business_name" name="business_name"
+                            value="{{ chatbot.business_name }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="business_type" class="form-label">Business Type *</label>
+                        <select class="form-select" id="business_type" name="business_type" required>
+                            {% for type in business_types %}
+                            <option value="{{ type }}" {% if chatbot.business_type==type %}selected{% endif %}>{{ type
+                                }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="business_description" class="form-label">Business Description *</label>
+                    <textarea class="form-control" id="business_description" name="business_description" rows="3"
+                        required>{{ chatbot.business_description }}</textarea>
+                    <div class="form-text">Brief description of your business.</div>
+                </div>
+            </div>
+
+            <!-- Business Details -->
+            <div class="form-section">
+                <h4 class="form-section-title"><i class="bi bi-building"></i> Business Details</h4>
+                <div class="mb-3">
+                    <label for="business_hours" class="form-label">Business Hours</label>
+                    <textarea class="form-control" id="business_hours" name="business_hours"
+                        rows="2">{{ chatbot.business_hours }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="services" class="form-label">Services Offered</label>
+                    <textarea class="form-control" id="services" name="services"
+                        rows="3">{{ chatbot.services }}</textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location" name="location"
+                            value="{{ chatbot.location }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="contact_info" class="form-label">Contact Info</label>
+                        <input type="text" class="form-control" id="contact_info" name="contact_info"
+                            value="{{ chatbot.contact_info }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Information -->
+            <div class="form-section">
+                <h4 class="form-section-title"><i class="bi bi-calendar-check"></i> Booking Information</h4>
+                <div class="mb-3">
+                    <label for="availability" class="form-label">Availability</label>
+                    <textarea class="form-control" id="availability" name="availability"
+                        rows="2">{{ chatbot.availability }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="booking_process" class="form-label">Booking Process</label>
+                    <textarea class="form-control" id="booking_process" name="booking_process"
+                        rows="3">{{ chatbot.booking_process }}</textarea>
+                </div>
+            </div>
+
+            <!-- FAQs -->
+            <div class="form-section">
+                <h4 class="form-section-title"><i class="bi bi-question-circle"></i> FAQ</h4>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">Manage your chatbot's
+                    frequently asked questions.</p>
+
+                <div id="faq-container">
+                    {% for faq in chatbot.faqs %}
+                    <div class="faq-item">
+                        <div class="remove-faq" onclick="removeFAQ(this)"><i class="bi bi-x-lg"></i></div>
+                        <div class="mb-2">
+                            <label class="form-label">Question</label>
+                            <input type="text" class="form-control" name="faq_question[]" value="{{ faq.question }}">
+                        </div>
+                        <div>
+                            <label class="form-label">Answer</label>
+                            <textarea class="form-control" name="faq_answer[]" rows="2">{{ faq.answer }}</textarea>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <button type="button" class="btn btn-outline-primary btn-add-faq mt-2" onclick="addFAQ()">
+                    <i class="bi bi-plus me-1"></i> Add FAQ
+                </button>
+            </div>
+
+            <!-- Telegram Integration -->
+            <div class="form-section">
+                <h4 class="form-section-title"><i class="bi bi-telegram"></i> Telegram Integration</h4>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Connect Telegram for real-time notifications. <a href="https://core.telegram.org/bots#botfather"
+                        target="_blank">How?</a>
+                </p>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="telegram_bot_token" class="form-label">Bot Token</label>
+                        <input type="text" class="form-control" id="telegram_bot_token" name="telegram_bot_token"
+                            value="{{ chatbot.telegram_bot_token or '' }}" placeholder="123456789:ABCdefGHI...">
+                        <div class="form-text">Get from @BotFather on Telegram.</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="telegram_chat_id" class="form-label">Chat ID</label>
+                        <input type="text" class="form-control" id="telegram_chat_id" name="telegram_chat_id"
+                            value="{{ chatbot.telegram_chat_id or '' }}" placeholder="987654321">
+                        <div class="form-text">Get from @userinfobot on Telegram.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-glass btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back
+                </a>
+                <button type="submit" class="btn btn-premium">
+                    <i class="bi bi-save me-1"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function addFAQ() {
+        const container = document.getElementById('faq-container');
+        const faqItem = document.createElement('div');
+        faqItem.className = 'faq-item fade-in';
+        faqItem.innerHTML = `
+            <div class="remove-faq" onclick="removeFAQ(this)"><i class="bi bi-x-lg"></i></div>
+            <div class="mb-2">
+                <label class="form-label">Question</label>
+                <input type="text" class="form-control" name="faq_question[]" placeholder="Enter a common question">
+            </div>
+            <div>
+                <label class="form-label">Answer</label>
+                <textarea class="form-control" name="faq_answer[]" rows="2" placeholder="Provide a clear answer"></textarea>
+            </div>
+        `;
+        container.appendChild(faqItem);
+    }
+
+    function removeFAQ(element) {
+        const faqItem = element.closest('.faq-item');
+        faqItem.style.opacity = '0';
+        faqItem.style.transform = 'translateY(-10px)';
+        setTimeout(() => faqItem.remove(), 200);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const container = document.getElementById('faq-container');
+        if (container.children.length === 0) addFAQ();
+    });
+</script>
+{% endblock %}

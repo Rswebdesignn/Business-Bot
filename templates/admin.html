@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Create Chatbot - BusinessAI{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show mb-3" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"
+            style="font-size: 0.6rem;"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="page-header reveal">
+        <h2 class="fw-bold">Create New Chatbot</h2>
+        <p>Configure your AI-powered business assistant</p>
+    </div>
+
+    <!-- Intro Card -->
+    <div class="intro-card reveal">
+        <h5 class="fw-bold mb-2"><i class="bi bi-lightbulb me-2" style="color: var(--accent);"></i>Getting Started</h5>
+        <p>Fill in your business details below to train your AI assistant.</p>
+        <p class="mb-0">The more detail you provide, the smarter your chatbot becomes.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin') }}">
+        <div class="form-container fade-in">
+            <!-- Basic Information -->
+            <div class="form-section">
+                <h4 class="form-section-title">
+                    <i class="bi bi-info-circle"></i> Basic Information
+                </h4>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="business_name" class="form-label">Business Name *</label>
+                        <input type="text" class="form-control" id="business_name" name="business_name"
+                            placeholder="e.g., Tech Solutions Inc." required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="business_type" class="form-label">Business Type *</label>
+                        <select class="form-select" id="business_type" name="business_type" required>
+                            {% for type in business_types %}
+                            <option value="{{ type }}">{{ type }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="business_description" class="form-label">Business Description *</label>
+                    <textarea class="form-control" id="business_description" name="business_description" rows="3"
+                        placeholder="Describe what your business does..." required></textarea>
+                    <div class="form-text">Brief description of your business.</div>
+                </div>
+            </div>
+
+            <!-- Business Details -->
+            <div class="form-section">
+                <h4 class="form-section-title">
+                    <i class="bi bi-building"></i> Business Details
+                </h4>
+                <div class="mb-3">
+                    <label for="business_hours" class="form-label">Business Hours</label>
+                    <textarea class="form-control" id="business_hours" name="business_hours" rows="2"
+                        placeholder="e.g., Mon-Fri: 9am-5pm, Sat: 10am-3pm"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="services" class="form-label">Services Offered</label>
+                    <textarea class="form-control" id="services" name="services" rows="3"
+                        placeholder="List your main services or products..."></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location" name="location" placeholder="City, State">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="contact_info" class="form-label">Contact Info</label>
+                        <input type="text" class="form-control" id="contact_info" name="contact_info"
+                            placeholder="Phone, email, website...">
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- FAQs -->
+            <div class="form-section">
+                <h4 class="form-section-title">
+                    <i class="bi bi-question-circle"></i> FAQ
+                </h4>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">Add common questions
+                    to help your AI respond accurately.</p>
+
+                <div id="faq-container">
+                    <div class="faq-item">
+                        <div class="remove-faq" onclick="removeFAQ(this)">
+                            <i class="bi bi-x-lg"></i>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Question</label>
+                            <input type="text" class="form-control" name="faq_question[]"
+                                placeholder="Enter a common question">
+                        </div>
+                        <div>
+                            <label class="form-label">Answer</label>
+                            <textarea class="form-control" name="faq_answer[]" rows="2"
+                                placeholder="Provide a clear answer"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-outline-primary btn-add-faq mt-2" onclick="addFAQ()">
+                    <i class="bi bi-plus me-1"></i> Add FAQ
+                </button>
+            </div>
+
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-glass btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back
+                </a>
+                <button type="submit" class="btn btn-premium">
+                    <i class="bi bi-rocket me-1"></i> Create Chatbot
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function addFAQ() {
+        const container = document.getElementById('faq-container');
+        const faqItem = document.createElement('div');
+        faqItem.className = 'faq-item fade-in';
+        faqItem.innerHTML = `
+            <div class="remove-faq" onclick="removeFAQ(this)">
+                <i class="bi bi-x-lg"></i>
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Question</label>
+                <input type="text" class="form-control" name="faq_question[]" placeholder="Enter a common question">
+            </div>
+            <div>
+                <label class="form-label">Answer</label>
+                <textarea class="form-control" name="faq_answer[]" rows="2" placeholder="Provide a clear answer"></textarea>
+            </div>
+        `;
+        container.appendChild(faqItem);
+    }
+
+    function removeFAQ(element) {
+        const faqItem = element.closest('.faq-item');
+        faqItem.style.opacity = '0';
+        faqItem.style.transform = 'translateY(-10px)';
+        setTimeout(() => faqItem.remove(), 200);
+    }
+</script>
+{% endblock %}

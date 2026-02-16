@@ -1,0 +1,469 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - BusinessAI{% endblock %}
+
+{% block styles %}
+<style>
+    .action-btn {
+        padding: 0.35rem 0.7rem;
+        font-size: 0.85rem;
+        border-radius: var(--radius-sm);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .embed-code-block {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        font-family: 'Cascadia Code', monospace;
+        font-size: 0.85rem;
+        white-space: pre-wrap;
+        word-break: break-all;
+        color: var(--text-primary);
+    }
+
+    /* Structured Activity Styles */
+    .activity-feed-container {
+        margin-top: 3rem;
+        padding-top: 1rem;
+    }
+
+    .activity-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .lead-card-modern {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
+        margin-bottom: 1.25rem;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .lead-card-modern:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .lead-status-icon {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        background: var(--accent-subtle);
+        color: var(--accent);
+    }
+
+    .lead-card-modern[data-status="approved"] .lead-status-icon {
+        background: var(--success-subtle);
+        color: var(--success);
+    }
+
+    .lead-card-modern[data-status="declined"] .lead-status-icon {
+        background: var(--danger-subtle);
+        color: var(--danger);
+    }
+
+    .lead-main-info {
+        flex: 1;
+    }
+
+    .lead-name {
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        color: var(--text-primary);
+    }
+
+    .lead-details-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+    }
+
+    .lead-detail-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .lead-detail-item i {
+        opacity: 0.7;
+    }
+
+    .lead-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .status-pill {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        border-radius: 50px;
+        letter-spacing: 0.02em;
+    }
+
+    .pill-pending {
+        background: var(--warning-subtle);
+        color: var(--warning);
+    }
+
+    .pill-approved {
+        background: var(--success-subtle);
+        color: var(--success);
+    }
+
+    .pill-declined {
+        background: var(--danger-subtle);
+        color: var(--danger);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show mb-3" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Dashboard Header -->
+    <div class="dashboard-header reveal">
+        <div class="header-bg-glow"></div>
+        <div class="dashboard-header-content">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                <div>
+                    <h2 class="fw-bold mb-1">Welcome, {{ current_user.username }} 👋</h2>
+                    <p class="text-secondary mb-0">Here's an overview of your AI business ecosystem.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <div class="position-relative">
+                        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                        <input type="text" id="searchBot" class="form-control ps-5" placeholder="Search agents..."
+                            style="width: 250px; background: var(--bg-elevated);">
+                    </div>
+                    <a href="{{ url_for('admin') }}" class="btn btn-premium">
+                        <i class="bi bi-plus-lg me-1"></i> New Agent
+                    </a>
+                </div>
+            </div>
+
+            <!-- Executive Stats Row -->
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="bi bi-robot"></i></div>
+                        <div class="stat-value">{{ stats.total_agents }}</div>
+                        <div class="stat-label">Active Agents</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(167, 139, 250, 0.12); color: #a78bfa;">
+                            <i class="bi bi-chat-left-dots"></i>
+                        </div>
+                        <div class="stat-value">{{ stats.total_conversations }}</div>
+                        <div class="stat-label">Total Chats</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;">
+                            <i class="bi bi-calendar-event"></i>
+                        </div>
+                        <div class="stat-value">{{ stats.pending_appointments }}</div>
+                        <div class="stat-label">Pending Req</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(34, 197, 94, 0.12); color: #22c55e;">
+                            <i class="bi bi-check2-circle"></i>
+                        </div>
+                        <div class="stat-value">{{ stats.approved_appointments }}</div>
+                        <div class="stat-label">Confirmed</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chatbot Display -->
+    {% if chatbots|length > 0 %}
+    <div class="row g-4 mb-5 reveal">
+        {% for chatbot in chatbots %}
+        <div class="col-md-6 col-lg-4">
+            <div class="chatbot-card">
+                <!-- Dropdown Menu -->
+                <div class="card-options-dropdown dropdown">
+                    <button class="btn-icon-only" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg border-secondary">
+                        <li><a class="dropdown-item py-2" href="{{ url_for('chat', config_id=chatbot.config_id) }}"
+                                target="_blank">
+                                <i class="bi bi-chat-dots me-2 text-primary"></i> Test Chatbot
+                            </a></li>
+                        <li><a class="dropdown-item py-2" href="#" onclick="copyEmbedCode('{{ chatbot.config_id }}')">
+                                <i class="bi bi-code-slash me-2 text-warning"></i> Embed Code
+                            </a></li>
+                        <li>
+                            <hr class="dropdown-divider border-secondary">
+                        </li>
+                        <li><a class="dropdown-item py-2 text-danger" href="#" data-bs-toggle="modal"
+                                data-bs-target="#deleteModal{{ chatbot.id }}">
+                                <i class="bi bi-trash me-2"></i> Delete Agent
+                            </a></li>
+                    </ul>
+                </div>
+
+                <div class="card-header d-flex align-items-center gap-3">
+                    <div class="stat-icon m-0" style="width: 48px; height: 48px; font-size: 1.4rem;">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0 fw-bold">{{ chatbot.business_name }}</h5>
+                        <small class="text-muted">{{ chatbot.business_type }}</small>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <p class="card-text text-muted">
+                        {{ chatbot.business_description[:85] }}{% if chatbot.business_description|length > 85 %}...{%
+                        endif %}
+                    </p>
+
+                    <div class="chatbot-stats-mini">
+                        <div class="stat-item">
+                            <div class="stat-value">{{ chatbot.conversations|length }}</div>
+                            <div class="stat-label">Chats</div>
+                        </div>
+                        <div class="stat-item border-start ps-3">
+                            <div class="stat-value">{{ chatbot.leads_count }}</div>
+                            <div class="stat-label">Leads</div>
+                        </div>
+                        <div class="stat-item border-start ps-3">
+                            <div class="stat-value text-success">Live</div>
+                            <div class="stat-label">Status</div>
+                        </div>
+                    </div>
+
+                    <div class="chatbot-actions">
+                        <a href="{{ url_for('manage_chatbot', config_id=chatbot.config_id) }}"
+                            class="btn btn-premium w-100 py-2">
+                            <i class="bi bi-sliders me-1"></i> Manage & Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Modal -->
+        <div class="modal fade" id="deleteModal{{ chatbot.id }}" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger border-0">
+                        <h5 class="modal-title text-white"><i class="bi bi-exclamation-triangle me-1"></i> Confirm
+                            Delete</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body py-4">
+                        <p class="mb-0">Are you sure you want to delete <strong>{{ chatbot.business_name }}</strong>?
+                            All configuration and chat history will be lost.</p>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-glass btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                        <form action="{{ url_for('delete_chatbot', config_id=chatbot.config_id) }}" method="POST"
+                            style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm px-3">
+                                <i class="bi bi-trash me-1"></i> Delete Permanent
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Structured Recent Activity Section -->
+    {% if appointments|length > 0 %}
+    <div class="activity-feed-container reveal">
+        <div class="activity-header">
+            <div>
+                <h4 class="mb-1 fw-bold">Recent Leads</h4>
+                <p class="text-secondary small mb-0">Unified stream of all incoming interactions across your agents.</p>
+            </div>
+            <span class="badge bg-secondary px-3 py-2">{{ appointments|length }} Recent Activity</span>
+        </div>
+
+        <div class="activity-cards-list">
+            {% for item in appointments %}
+            <div class="lead-card-modern reveal" data-status="{{ item.status }}">
+                <div class="lead-status-icon">
+                    <i
+                        class="bi {% if item.status == 'approved' %}bi-check-circle-fill{% elif item.status == 'declined' %}bi-x-circle-fill{% else %}bi-lightning-charge-fill{% endif %}"></i>
+                </div>
+
+                <div class="lead-main-info">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <h6 class="lead-name mb-0">{{ item.customer_name }}</h6>
+                        <span
+                            class="status-pill {% if item.status == 'approved' %}pill-approved{% elif item.status == 'declined' %}pill-declined{% else %}pill-pending{% endif %}">
+                            {{ item.status }}
+                        </span>
+                    </div>
+
+                    <div class="lead-details-grid">
+                        <div class="lead-detail-item" title="Business">
+                            <i class="bi bi-robot text-primary"></i>
+                            {{ item.business_config.business_name }}
+                        </div>
+                        <div class="lead-detail-item">
+                            <i class="bi bi-clock"></i>
+                            {{ item.preferred_time }}
+                        </div>
+                        <div class="lead-detail-item">
+                            <i class="bi bi-telephone"></i>
+                            {{ item.customer_mobile }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lead-actions">
+                    {% if item.status == 'pending' %}
+                    <form action="{{ url_for('manage_chatbot', config_id=item.business_config.config_id) }}"
+                        method="POST" class="d-inline">
+                        <input type="hidden" name="appointment_id" value="{{ item.id }}">
+                        <input type="hidden" name="action" value="appointment_action">
+                        <input type="hidden" name="apt_action" value="approve">
+                        <button type="submit" class="btn btn-success btn-sm px-3 rounded-pill fw-bold"
+                            style="font-size: 0.75rem;">Approve</button>
+                    </form>
+                    <form action="{{ url_for('manage_chatbot', config_id=item.business_config.config_id) }}"
+                        method="POST" class="d-inline">
+                        <input type="hidden" name="appointment_id" value="{{ item.id }}">
+                        <input type="hidden" name="action" value="appointment_action">
+                        <input type="hidden" name="apt_action" value="decline">
+                        <button type="submit" class="btn btn-outline-danger btn-sm px-3 rounded-pill fw-bold"
+                            style="font-size: 0.75rem;">Decline</button>
+                    </form>
+                    {% else %}
+                    <div class="text-secondary small fw-medium">
+                        Processed on {{ item.updated_at.strftime('%d %b') }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Enhanced Empty State -->
+    <div class="empty-state reveal py-5 text-center">
+        <div class="stat-icon mx-auto mb-4"
+            style="width: 80px; height: 80px; font-size: 2.5rem; background: var(--accent-subtle);">
+            <i class="bi bi-robot"></i>
+        </div>
+        <h3 class="fw-bold h2 mb-3">Begin Your AI Journey</h3>
+        <p class="text-secondary mx-auto mb-4" style="max-width: 500px;">
+            You haven't created any agents yet. Launch your first business companion to start automating customer
+            support and lead generation.
+        </p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{{ url_for('admin') }}" class="btn btn-premium btn-lg px-5">
+                <i class="bi bi-plus-lg me-2"></i> Create First Agent
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal for Embed Code -->
+<div class="modal fade" id="embedModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-code-slash me-2"></i> Embed Your Agent</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-secondary small mb-3">Copy this snippet into your website's <code>&lt;body&gt;</code> tag
+                    to go live.</p>
+                <div class="embed-code-block" id="embedCodeText"></div>
+                <button class="btn btn-premium w-100 mt-3" onclick="copyToClipboard()">
+                    <i class="bi bi-clipboard me-1"></i> Copy to Clipboard
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copyEmbedCode(configId) {
+        const code = `<!-- BusinessAI Bot Start -->\n<script>\n  window.BI_BOT_CONFIG = { id: "${configId}" };\n<\/script>\n<script src="${window.location.origin}/static/js/embed.js" async><\/script>\n<!-- BusinessAI Bot End -->`;
+
+        document.getElementById('embedCodeText').innerText = code;
+        const modal = new bootstrap.Modal(document.getElementById('embedModal'));
+        modal.show();
+    }
+
+    function copyToClipboard() {
+        const text = document.getElementById('embedCodeText').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Embed code copied!');
+        });
+    }
+
+    // Search functionality
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('searchBot');
+        if (searchInput) {
+            searchInput.addEventListener('input', function (e) {
+                const term = e.target.value.toLowerCase();
+                const cards = document.querySelectorAll('.chatbot-card');
+
+                cards.forEach(card => {
+                    const name = card.querySelector('h5').innerText.toLowerCase();
+                    const type = card.querySelector('small').innerText.toLowerCase();
+                    const container = card.closest('.col-md-6, .col-lg-4');
+
+                    if (name.includes(term) || type.includes(term)) {
+                        container.style.display = 'block';
+                    } else {
+                        container.style.display = 'none';
+                    }
+                });
+            });
+        }
+    });
+</script>
+</div>
+{% endblock %}

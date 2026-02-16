@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Login - BusinessAI{% endblock %}
+
+{% block content %}
+<div class="container auth-wrapper">
+    <div class="glass-card glass-auth reveal">
+        <div class="text-center mb-4">
+            <div class="auth-header-icon">
+                <i class="bi bi-robot"></i>
+            </div>
+            <h2 class="fw-bold mb-1">Welcome Back</h2>
+            <p class="text-muted">Sign in to manage your AI agents</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show mb-3" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('login') }}" class="form-auth">
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-control" name="username" placeholder="Enter your username" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-control" name="password" placeholder="Enter your password" required>
+            </div>
+
+            <div class="d-grid mb-3">
+                <button type="submit" class="btn btn-premium" style="border-radius: var(--radius-md);">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                </button>
+            </div>
+        </form>
+
+        <div class="text-center">
+            <p class="mb-0" style="color: var(--text-muted);">Don't have an account?
+                <a href="{{ url_for('register') }}" class="text-gradient fw-bold text-decoration-none">Register here</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

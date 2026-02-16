@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ config.business_name }} - AI Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <!-- prettier-ignore -->
+    <style>
+        /* ═══ DESIGN TOKENS ═══ */
+        :root {
+            --chat-bg: #0a0a0f;
+            --header-bg: rgba(14, 14, 20, 0.82);
+            --input-bg: rgba(24, 24, 32, 0.75);
+            --msg-user: #6366f1;
+            /* Fallback */
+            --msg-bot: rgba(28, 28, 36, 0.85);
+            --text-primary: #f0f0f5;
+            --text-secondary: #8b8b9e;
+            --text-muted: #5a5a6e;
+            --border: rgba(255, 255, 255, 0.06);
+            --border-accent: rgba(255, 255, 255, 0.1);
+            --accent: #6366f1;
+            /* Fallback */
+            --accent-light: #6366f1cc;
+            --accent-subtle: #6366f118;
+            --accent-glow: #6366f130;
+            --glass-bg: rgba(18, 18, 26, 0.72);
+
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+            --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.25);
+            --shadow-lg: 0 16px 64px rgba(0, 0, 0, 0.35);
+            --radius-sm: 10px;
+            --radius-md: 16px;
+            --radius-lg: 22px;
+            --radius-pill: 100px;
+            --transition-fast: all 0.15s ease;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-spring: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            --user-bubble-text: #ffffff;
+        }
+
+        [data-theme="light"] {
+            --chat-bg: #f8f9fc;
+            --header-bg: rgba(255, 255, 255, 0.82);
+            --input-bg: rgba(255, 255, 255, 0.85);
+            --msg-bot: rgba(235, 236, 242, 0.95);
+            --text-primary: #111118;
+            --text-secondary: #5b5b6e;
+            --text-muted: #9090a0;
+            --border: rgba(0, 0, 0, 0.06);
+            --border-accent: rgba(0, 0, 0, 0.08);
+            --glass-bg: rgba(255, 255, 255, 0.72);
+            --glass-border: rgba(0, 0, 0, 0.06);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 16px 64px rgba(0, 0, 0, 0.1);
+            --user-bubble-text: #ffffff;
+        }
+
+        /* ═══ BASE RESET ═══ */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background-color: var(--chat-bg);
+            color: var(--text-primary);
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            letter-spacing: -0.01em;
+        }
+
+        .chat-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            background-color: var(--chat-bg);
+            position: relative;
+        }
+
+        /* ═══ GLASSMORPHIC HEADER ═══ */
+        .chat-header {
+            background: var(--header-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 0.9rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .chat-header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0.5;
+            animation: gradientShift 4s ease infinite;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header-avatar {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            color: white;
+            box-shadow: 0 4px 16px var(--accent-glow);
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .header-avatar::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--accent), transparent);
+            opacity: 0.25;
+            z-index: -1;
+        }
+
+        .header-name {
+            font-weight: 650;
+            font-size: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .header-status {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulseGlow 2s ease-in-out infinite;
+            box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .header-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1.05rem;
+            padding: 0.45rem;
+            border-radius: var(--radius-sm);
+            transition: var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-btn:hover {
+            color: var(--text-primary);
+            background: var(--accent-subtle);
+        }
+
+        /* ═══ MESSAGES AREA ═══ */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 1.5rem 1.25rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            display: flex;
+            max-width: 72%;
+            animation: messageIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            opacity: 0;
+        }
+
+        .message-user {
+            align-self: flex-end;
+        }
+
+        .message-bot {
+            align-self: flex-start;
+        }
+
+        .message-bubble {
+            padding: 0.8rem 1.15rem;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            line-height: 1.65;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            position: relative;
+        }
+
+        /* User Bubble — Solid Accent with guaranteed white text */
+        .message-user .message-bubble {
+            background: var(--accent);
+            color: var(--user-bubble-text);
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 4px 18px var(--accent-glow);
+        }
+
+        /* Bot Bubble — Frosted Glass */
+        .message-bot .message-bubble {
+            background: var(--msg-bot);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
+            border-bottom-left-radius: 6px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Success Message — Premium Glow */
+        .message-success .message-bubble {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
+            border-color: rgba(34, 197, 94, 0.3);
+            box-shadow: 0 8px 32px rgba(34, 197, 94, 0.1);
+        }
+
+        .message-success .message-bubble::before {
+            content: '🎉';
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            font-size: 1.2rem;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateY(0);
+            }
+
+            40% {
+                transform: translateY(-10px);
+            }
+
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        /* Markdown inside bubbles */
+        .message-bubble p {
+            margin: 0 0 0.4rem;
+        }
+
+        .message-bubble p:last-child {
+            margin-bottom: 0;
+        }
+
+        .message-bubble ul,
+        .message-bubble ol {
+            margin: 0.4rem 0;
+            padding-left: 1.25rem;
+        }
+
+        .message-bubble li {
+            margin-bottom: 0.2rem;
+        }
+
+        .message-bubble code {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 0.15rem 0.4rem;
+            border-radius: 5px;
+            font-size: 0.82rem;
+            font-family: 'SF Mono', 'Cascadia Code', monospace;
+        }
+
+        .message-bubble pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.85rem;
+            border-radius: var(--radius-sm);
+            overflow-x: auto;
+            font-size: 0.82rem;
+            margin: 0.5rem 0;
+            border: 1px solid var(--border);
+        }
+
+        .message-bubble a {
+            color: #a5b4fc;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .message-bubble strong {
+            font-weight: 600;
+        }
+
+        [data-theme="light"] .message-bubble code {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="light"] .message-bubble pre {
+            background: rgba(0, 0, 0, 0.035);
+        }
+
+        [data-theme="light"] .message-bubble a {
+            color: var(--accent);
+        }
+
+        [data-theme="light"] .message-bot .message-bubble {
+            border-color: rgba(0, 0, 0, 0.08);
+        }
+
+        /* ═══ TYPING INDICATOR — SHIMMER ═══ */
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            padding: 0.9rem 1.2rem;
+            background: var(--msg-bot);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            border-bottom-left-radius: 6px;
+            box-shadow: var(--shadow-sm);
+            animation: messageIn 0.3s ease forwards;
+        }
+
+        .shimmer-lines {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .shimmer-line {
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--border-accent) 0%, var(--text-muted) 50%, var(--border-accent) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease-in-out infinite;
+        }
+
+        .shimmer-line:nth-child(1) {
+            width: 120px;
+        }
+
+        .shimmer-line:nth-child(2) {
+            width: 180px;
+            animation-delay: 0.15s;
+        }
+
+        .shimmer-line:nth-child(3) {
+            width: 90px;
+            animation-delay: 0.3s;
+        }
+
+        /* ═══ HANDOFF STATUS INDICATORS ═══ */
+        .handoff-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: 14px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            margin: 10px 0;
+            animation: fadeIn 0.4s ease;
+            backdrop-filter: blur(8px);
+        }
+
+        .handoff-pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .handoff-active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .status-pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            margin-right: 8px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.4;
+                transform: scale(0.85);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* ═══ PREMIUM HANDOFF UI ═══ */
+        .handoff-status-window {
+            position: fixed;
+            top: 75px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            z-index: 1000;
+            background: rgba(18, 18, 26, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--accent-glow);
+            padding: 8px 18px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+        }
+
+        .handoff-status-window.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .status-badge {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .status-badge.active {
+            background: #10b981;
+            box-shadow: 0 0 15px #10b981;
+        }
+
+        .status-badge.pending {
+            background: #f59e0b;
+            box-shadow: 0 0 15px #f59e0b;
+        }
+
+        .status-badge::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+            animation: pulseIn 2s infinite;
+        }
+
+        @keyframes pulseIn {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        /* Connecting Card Overhaul */
+        .handoff-connecting-card {
+            background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.1), rgba(var(--accent-rgb), 0.05));
+            border: 1px solid var(--accent-glow);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+            text-align: center;
+            backdrop-filter: blur(12px);
+            animation: messageIn 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .connecting-shimmer {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite linear;
+            pointer-events: none;
+        }
+
+        .timer-display {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--accent);
+            font-variant-numeric: tabular-nums;
+            margin: 0.5rem 0;
+            text-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .connecting-status-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Agent Joined Message */
+        .message-agent-join .message-bubble {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 182, 212, 0.12));
+            border-color: rgba(16, 185, 129, 0.35);
+            box-shadow: 0 8px 32px rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            font-weight: 550;
+        }
+
+        .message-agent-join::before {
+            content: '👋';
+            margin-right: 8px;
+            font-size: 1.1rem;
+        }
+
+        /* Agent Left Message */
+        .message-agent-leave .message-bubble {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+            border-color: rgba(239, 68, 68, 0.25);
+            color: #f87171;
+            font-style: italic;
+        }
+
+        /* ═══ FLOATING INPUT BAR ═══ */
+        .input-area {
+            padding: 0 1rem 0.65rem;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--input-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-pill);
+            padding: 0.4rem 0.5rem 0.4rem 1.25rem;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow), var(--shadow-md);
+        }
+
+        #messageInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            padding: 0.4rem 0;
+            letter-spacing: -0.01em;
+        }
+
+        #messageInput::placeholder {
+            color: var(--text-muted);
+        }
+
+        .send-btn {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            border: none;
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition-spring);
+            flex-shrink: 0;
+            font-size: 1rem;
+            box-shadow: 0 4px 14px var(--accent-glow);
+        }
+
+        .send-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 6px 22px var(--accent-glow);
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ═══ POWERED-BY FOOTER ═══ */
+        .powered-by {
+            text-align: center;
+            padding: 0.3rem 0 0.6rem;
+            flex-shrink: 0;
+        }
+
+        .powered-by a {
+            font-size: 0.62rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            transition: var(--transition-fast);
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .powered-by a:hover {
+            color: var(--accent);
+        }
+
+        .powered-by a i {
+            font-size: 0.55rem;
+            opacity: 0.7;
+        }
+
+        /* ═══ AGENT LIVE OVERLAY ═══ */
+        .agent-live-tag {
+            background: linear-gradient(90deg, #10b981, #059669);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-left: 8px;
+            letter-spacing: 0.05em;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        /* ═══ WELCOME SCREEN ═══ */
+        .welcome-screen {
+            text-align: center;
+            padding: 2.5rem 1.5rem 1.5rem;
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .welcome-icon-wrap {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            color: white;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 8px 32px var(--accent-glow);
+            position: relative;
+            animation: breathe 3s ease-in-out infinite;
+        }
+
+        .welcome-icon-wrap::before {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, var(--accent), transparent);
+            opacity: 0.15;
+            z-index: -1;
+            animation: breathe 3s ease-in-out infinite reverse;
+        }
+
+        .welcome-screen h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.35rem;
+            letter-spacing: -0.03em;
+        }
+
+        .welcome-screen p {
+            font-size: 0.88rem;
+            max-width: 320px;
+            line-height: 1.5;
+            margin-bottom: 1.25rem;
+        }
+
+        /* Suggestion Chips */
+        .suggestion-chips {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+            max-width: 380px;
+        }
+
+        .suggestion-chip {
+            background: var(--accent-subtle);
+            color: var(--accent);
+            border: 1px solid var(--accent-glow);
+            border-radius: var(--radius-pill);
+            padding: 0.45rem 1rem;
+            font-size: 0.78rem;
+            font-weight: 550;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.01em;
+        }
+
+        .suggestion-chip:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px var(--accent-glow);
+        }
+
+        /* ═══ ANIMATIONS ═══ */
+        @keyframes messageIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px) scale(0.97);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        @keyframes pulseGlow {
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 4px rgba(34, 197, 94, 0.4);
+            }
+
+            50% {
+                opacity: 0.6;
+                box-shadow: 0 0 10px rgba(34, 197, 94, 0.7);
+            }
+        }
+
+        @keyframes gradientShift {
+
+            0%,
+            100% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.04);
+            }
+        }
+
+        /* ═══ SCROLLBAR ═══ */
+        .messages-container::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .messages-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb {
+            background: var(--border-accent);
+            border-radius: 4px;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        /* ═══ MOBILE ═══ */
+        @media (max-width: 600px) {
+            .message {
+                max-width: 84%;
+            }
+
+            .message-bubble {
+                font-size: 0.88rem;
+                padding: 0.7rem 1rem;
+            }
+
+            .header-name {
+                font-size: 0.92rem;
+            }
+
+            .header-avatar {
+                width: 36px;
+                height: 36px;
+                border-radius: 12px;
+                font-size: 1rem;
+            }
+
+            .welcome-icon-wrap {
+                width: 54px;
+                height: 54px;
+                font-size: 1.35rem;
+                border-radius: 16px;
+            }
+
+            .welcome-screen h3 {
+                font-size: 1.15rem;
+            }
+
+            .welcome-screen p {
+                font-size: 0.84rem;
+            }
+
+            #messageInput {
+                font-size: 0.88rem;
+            }
+
+            .send-btn {
+                width: 34px;
+                height: 34px;
+                font-size: 0.92rem;
+            }
+
+            .suggestion-chip {
+                font-size: 0.74rem;
+                padding: 0.4rem 0.85rem;
+            }
+
+            .input-area {
+                padding: 0 0.65rem 0.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body data-theme="dark">
+    <div class="chat-container">
+
+        <!-- ═══ GLASSMORPHIC HEADER ═══ -->
+        <div class="chat-header">
+            <div class="header-info">
+                <div class="header-avatar"><i class="bi {{ style_config.get('bot_icon', 'bi-robot') }}"></i></div>
+                <div>
+                    <div class="header-name">{{ config.business_name }}</div>
+                    <div class="header-status"><span class="status-dot"></span> Online</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" id="themeToggle" title="Toggle theme">
+                    <i class="bi bi-sun-fill" id="themeIcon"></i>
+                </button>
+                <button class="header-btn" id="clearChat" title="New chat">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══ PREMIUM STATUS WINDOW ═══ -->
+        <div id="statusWindow" class="handoff-status-window">
+            <div id="statusBadge" class="status-badge"></div>
+            <div id="statusText" style="font-size: 0.8rem; font-weight: 600; letter-spacing: 0.02em;">Agent Offline
+            </div>
+        </div>
+
+        <!-- ═══ MESSAGES ═══ -->
+        <div class="messages-container" id="messagesContainer">
+            <div class="welcome-screen" id="welcomeMessage">
+                <div class="welcome-icon-wrap"><i class="bi {{ style_config.get('bot_icon', 'bi-robot') }}"></i></div>
+                <h3>{{ config.business_name }}</h3>
+                <p>{{ style_config.get('welcome_message') or "AI-powered assistant at your service. Ask me anything
+                    about our business!"|safe }}</p>
+                {% set chips = style_config.get('suggestion_chips', '') %}
+                {% if chips %}
+                <div class="suggestion-chips">
+                    {% for chip in chips.split(',') %}
+                    {% if chip.strip() %}
+                    <button class="suggestion-chip" onclick="sendSuggestion(this)">{{ chip.strip() }}</button>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="suggestion-chips">
+                    <button class="suggestion-chip" onclick="sendSuggestion(this)">What services do you offer?</button>
+                    <button class="suggestion-chip" onclick="sendSuggestion(this)">Book an appointment</button>
+                    <button class="suggestion-chip" onclick="sendSuggestion(this)">Contact info</button>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Shimmer Typing Indicator -->
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="shimmer-lines">
+                    <div class="shimmer-line"></div>
+                    <div class="shimmer-line"></div>
+                    <div class="shimmer-line"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ FLOATING INPUT BAR ═══ -->
+        <div class="input-area">
+            <form id="chatForm" onsubmit="sendMessage(event)">
+                <div class="input-wrapper">
+                    <input type="text" id="messageInput" placeholder="Ask me anything..." autocomplete="off">
+                    <button type="submit" class="send-btn" id="sendBtn">
+                        <i class="bi bi-arrow-up" id="sendIcon"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ═══ POWERED BY FOOTER ═══ -->
+        <div class="powered-by">
+            <a href="https://chat-bot-tdss.onrender.com/" target="_blank" rel="noopener noreferrer">
+                <i class="bi bi-lightning-charge-fill"></i> Powered by BPA-Flow
+            </a>
+        </div>
+    </div>
+
+    <script>
+        /* ═══ GLOBAL STATE ═══ */
+        const config_id = "{{ config.config_id }}";
+        let chatKey = localStorage.getItem('chat_key');
+        if (!chatKey) {
+            chatKey = 'chat_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+            localStorage.setItem('chat_key', chatKey);
+        }
+        const sessionId = config_id + "_" + chatKey;
+
+        // Element caching
+        const chatContainer = document.getElementById('messagesContainer');
+        const welcomeScreen = document.getElementById('welcomeMessage');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const clearChatBtn = document.getElementById('clearChat');
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+
+        let isHandoffActive = false;
+        let isHandoffPending = false;
+        let handoffTimer = null;
+        let handoffTimeRemaining = 120;
+        let lastMessageCount = 0;
+        let pollingInterval = null;
+
+        /* ═══ DYNAMIC STYLES ═══ */
+        const primaryColor = "{{ style_config.get('primary_color', '#6366f1') }}";
+        // Convert hex to RGB for semi-transparent gradients
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '99, 102, 241';
+        }
+        document.documentElement.style.setProperty('--accent-rgb', hexToRgb(primaryColor));
+        document.documentElement.style.setProperty('--msg-user', primaryColor);
+        document.documentElement.style.setProperty('--accent', primaryColor);
+        document.documentElement.style.setProperty('--accent-light', primaryColor + 'cc');
+        document.documentElement.style.setProperty('--accent-subtle', primaryColor + '18');
+        document.documentElement.style.setProperty('--accent-glow', primaryColor + '30');
+
+        /* ═══ UI HELPERS ═══ */
+        function scrollToBottom() {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function showTyping() {
+            typingIndicator.style.display = 'block';
+            scrollToBottom();
+        }
+
+        function hideTyping() {
+            typingIndicator.style.display = 'none';
+        }
+
+        function triggerCelebration() {
+            if (typeof confetti !== 'undefined') {
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: [primaryColor, '#ffffff']
+                });
+            }
+        }
+
+        function addMessage(sender, text, type = 'normal', saveLocally = true) {
+            if (welcomeScreen) welcomeScreen.style.display = 'none';
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message message-${sender}`;
+
+            // Premium styling for specific events
+            if (text.includes('Connection successful') || text.includes('real person has joined')) messageDiv.classList.add('message-agent-join');
+            if (text.includes('human agent has left')) messageDiv.classList.add('message-agent-leave');
+            if (type === 'success' || text.includes('✅') || text.includes('Connection successful')) messageDiv.classList.add('message-success');
+
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+
+            // Markdown-lite
+            let formattedText = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+
+            bubble.innerHTML = formattedText;
+            messageDiv.appendChild(bubble);
+
+            // Insert before typing indicator
+            chatContainer.insertBefore(messageDiv, typingIndicator);
+            scrollToBottom();
+
+            return messageDiv;
+        }
+
+        /* ═══ CORE ACTIONS ═══ */
+        async function sendMessage(e) {
+            if (e) e.preventDefault();
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            addMessage('user', message);
+            messageInput.value = '';
+            showTyping();
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        session_id: sessionId,
+                        chat_key: chatKey,
+                        config_id: config_id
+                    })
+                });
+
+                const data = await response.json();
+                hideTyping();
+
+                if (data.response) {
+                    addMessage('bot', data.response);
+                    if (data.appointment_booked || data.response.includes('✅')) {
+                        triggerCelebration();
+                    }
+                }
+
+                if ((data.handoff_pending || (data.response && data.response.includes('connecting you with a human'))) && !isHandoffPending) {
+                    startHandoffTimer();
+                }
+
+            } catch (error) {
+                hideTyping();
+                addMessage('bot', "⚠️ Connection lost. Retrying...");
+                console.error(error);
+            }
+        }
+
+        function startHandoffTimer() {
+            if (isHandoffPending) return;
+            isHandoffPending = true;
+            handoffTimeRemaining = 120;
+
+            const timerCard = document.createElement('div');
+            timerCard.className = 'handoff-connecting-card';
+            timerCard.id = 'handoffTimerCard';
+            timerCard.innerHTML = `
+                <div class="connecting-shimmer"></div>
+                <div class="connecting-status-text">CONNECTING TO A HUMAN AGENT</div>
+                <div class="timer-display" id="handoffTimer">02:00</div>
+                <p style="font-size: 0.75rem; opacity: 0.7;">An agent should be available shortly.</p>
+            `;
+            chatContainer.insertBefore(timerCard, typingIndicator);
+            scrollToBottom();
+
+            handoffTimer = setInterval(() => {
+                handoffTimeRemaining--;
+                const mins = Math.floor(handoffTimeRemaining / 60);
+                const secs = handoffTimeRemaining % 60;
+                const timerDisplay = document.getElementById('handoffTimer');
+                if (timerDisplay) {
+                    timerDisplay.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                }
+
+                if (handoffTimeRemaining <= 0) {
+                    stopHandoffTimer();
+                    if (!isHandoffActive) {
+                        addMessage('bot', "😔 **Offline Support**: Our human agents are currently away.\n\nPlease leave your details or try again during business hours.", 'normal');
+                    }
+                }
+            }, 1000);
+
+            if (!pollingInterval) startPolling();
+        }
+
+        function stopHandoffTimer() {
+            isHandoffPending = false;
+            clearInterval(handoffTimer);
+            const card = document.getElementById('handoffTimerCard');
+            if (card) card.remove();
+        }
+
+        async function startPolling() {
+            if (pollingInterval) return;
+            pollingInterval = setInterval(async () => {
+                try {
+                    const resp = await fetch(`/chat/history?session_id=${sessionId}&config_id=${config_id}`);
+                    const data = await resp.json();
+
+                    if (data.messages && data.messages.length > lastMessageCount) {
+                        const newMessages = data.messages.slice(lastMessageCount);
+                        newMessages.forEach(msg => {
+                            if (msg.role === 'assistant') {
+                                if (msg.content.includes('Connection successful') || msg.content.includes('real person has joined')) {
+                                    isHandoffActive = true;
+                                    stopHandoffTimer();
+                                    triggerCelebration();
+                                }
+                                if (msg.content.includes('human agent has left')) {
+                                    isHandoffActive = false;
+                                }
+                                addMessage('bot', msg.content);
+                            }
+                        });
+                        lastMessageCount = data.messages.length;
+                    }
+
+                    // Update Status Window
+                    const statusWindow = document.getElementById('statusWindow');
+                    const statusBadge = document.getElementById('statusBadge');
+                    const statusText = document.getElementById('statusText');
+
+                    if (data.handoff_status === 'ACTIVE') {
+                        isHandoffActive = true;
+                        statusWindow.classList.add('show');
+                        statusBadge.className = 'status-badge active';
+                        statusText.innerHTML = 'HUMAN AGENT LIVE <span class="agent-live-tag">LIVE</span>';
+                        stopHandoffTimer();
+                    } else if (data.handoff_status === 'PENDING') {
+                        statusWindow.classList.add('show');
+                        statusBadge.className = 'status-badge pending';
+                        statusText.innerText = 'CONNECTING TO OWNER...';
+                        if (!isHandoffPending) startHandoffTimer();
+                    } else {
+                        isHandoffActive = false;
+                        statusWindow.classList.remove('show');
+                        if (isHandoffPending) stopHandoffTimer();
+                    }
+
+                } catch (e) { console.error("Polling error:", e); }
+            }, 3000);
+        }
+
+        /* ═══ INITIALIZATION ═══ */
+        function initTheme() {
+            const savedTheme = localStorage.getItem('chat_theme') || 'dark';
+            document.body.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+
+            themeToggleBtn.addEventListener('click', () => {
+                const current = document.body.getAttribute('data-theme');
+                const next = current === 'dark' ? 'light' : 'dark';
+                document.body.setAttribute('data-theme', next);
+                localStorage.setItem('chat_theme', next);
+                updateThemeIcon(next);
+            });
+        }
+
+        function updateThemeIcon(theme) {
+            themeIcon.className = theme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+        }
+
+        function sendSuggestion(btn) {
+            messageInput.value = btn.textContent.trim();
+            sendMessage();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+
+            // Reload history and detect state
+            fetch(`/chat/history?session_id=${sessionId}&config_id=${config_id}`)
+                .then(r => r.json())
+                .then(data => {
+                    const handoffBanner = document.getElementById('handoffBanner');
+                    if (data.messages && data.messages.length > 0) {
+                        lastMessageCount = data.messages.length;
+                        data.messages.forEach(msg => addMessage(msg.role, msg.content, 'normal', false));
+                    }
+                    if (data.handoff_status) {
+                        if (data.handoff_status === 'ACTIVE') {
+                            isHandoffActive = true;
+                            if (handoffBanner) handoffBanner.style.display = 'inline-flex';
+                        }
+                        startPolling();
+                    }
+                });
+
+            clearChatBtn.addEventListener('click', () => {
+                if (confirm("Reset conversation?")) {
+                    localStorage.removeItem('chat_key');
+                    location.reload();
+                }
+            });
+        });
+
+    </script>
+</body>
+
+</html>
