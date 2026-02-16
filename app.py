@@ -734,13 +734,10 @@ def dashboard():
             
     return render_template('dashboard.html', chatbots=chatbots, appointments=appointments, stats=stats)
 
-@app.route('/admin', methods=['GET', 'POST'])
+@app.route('/admin', methods=['GET'])
 @login_required
 def admin():
     """Render the admin configuration page."""
-    if request.method == 'POST':
-        # Redirect POST requests to the save_config route
-        return redirect(url_for('save_config'))
     return render_template('admin.html', business_types=BUSINESS_TYPES)
 
 @app.route('/edit_chatbot/<config_id>', methods=['GET'])
