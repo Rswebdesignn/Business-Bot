@@ -859,14 +859,20 @@ def manage_chatbot(config_id):
 @app.route('/delete_chatbot/<config_id>', methods=['POST'])
 @login_required
 def delete_chatbot(config_id):
-    """Delete a chatbot configuration."""
-    chatbot = BusinessConfig.query.filter_by(config_id=config_id, user_id=current_user.id).first_or_404()
-    
-    # Delete the chatbot
-    db.session.delete(chatbot)
-    db.session.commit()
-    
-    flash('Chatbot deleted successfully', 'success')
+    """Delete a chatbot configuration and all its associated data."""
+    try:
+        chatbot = BusinessConfig.query.filter_by(config_id=config_id, user_id=current_user.id).first_or_404()
+        
+        # Delete the chatbot (cascading will handle FAQs, Appointments, Conversations, and HandoffRequests)
+        db.session.delete(chatbot)
+        db.session.commit()
+        
+        flash(f'Chatbot "{chatbot.business_name}" deleted successfully', 'success')
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR: Deletion failed: {str(e)}")
+        flash(f'Error deleting chatbot: {str(e)}', 'danger')
+        
     return redirect(url_for('dashboard'))
 
 @app.route('/save_config', methods=['POST'])
