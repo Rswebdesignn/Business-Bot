@@ -324,6 +324,11 @@ class BusinessConfig(db.Model):
                                     cascade="all, delete-orphan",
                                     backref='business',
                                     lazy=True)
+    handoff_requests = db.relationship('HandoffRequest',
+                                        primaryjoin="BusinessConfig.config_id==foreign(HandoffRequest.config_id)",
+                                        cascade="all, delete-orphan",
+                                        backref='business_config',
+                                        lazy=True)
 
 class HandoffRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -1460,47 +1465,91 @@ def telegram_webhook(config_id):
         callback_id = callback_query.get('id')
         
         # Parse callback: apt_approve_<id> or apt_decline_<id>
-        match = re.match(r'apt_(approve|decline)_(\d+)', callback_data)
-        if not match:
+        apt_match = re.match(r'apt_(approve|decline)_(\d+)', callback_data)
+        ho_match = re.match(r'ho_(accept|decline)_(\d+)', callback_data)
+        ho_end_match = re.match(r'ho_end_(\d+)', callback_data)
+        
+        if not (apt_match or ho_match or ho_end_match):
             return jsonify({"ok": True})
         
-        action = match.group(1)  # 'approve' or 'decline'
-        apt_id = int(match.group(2))
+        # 1. HANDLE APPOINTMENT CALLBACKS
+        if apt_match:
+            action = apt_match.group(1)  # 'approve' or 'decline'
+            apt_id = int(apt_match.group(2))
+            
+            # Get chatbot config
+            chatbot = BusinessConfig.query.filter_by(config_id=config_id).first()
+            if not chatbot: return jsonify({"ok": True})
+            
+            appointment = Appointment.query.get(apt_id)
+            if not appointment:
+                answer_telegram_callback(chatbot.telegram_bot_token, callback_id, "Appointment not found")
+                return jsonify({"ok": True})
+            
+            new_status = 'approved' if action == 'approve' else 'declined'
+            appointment.status = new_status
+            appointment.updated_at = datetime.utcnow()
+            db.session.commit()
+            
+            status_text = '✅ Approved' if action == 'approve' else '❌ Declined'
+            answer_telegram_callback(chatbot.telegram_bot_token, callback_id, f"Appointment {status_text}!")
+            
+            if appointment.telegram_message_id:
+                update_msg = (f"📅 <b>Appointment #{apt_id} — {status_text}</b>\n\n"
+                              f"👤 Name: {appointment.customer_name}\n"
+                              f"📧 Email: {appointment.customer_email}\n"
+                              f"📱 Mobile: {appointment.customer_mobile}\n"
+                              f"🕐 Time: {appointment.preferred_time}")
+                edit_telegram_message(chatbot.telegram_bot_token, chatbot.telegram_chat_id, appointment.telegram_message_id, update_msg)
         
-        # Get chatbot config
-        chatbot = BusinessConfig.query.filter_by(config_id=config_id).first()
-        if not chatbot:
-            return jsonify({"ok": True})
+        # 2. HANDLE HANDOFF CALLBACKS
+        elif ho_match:
+            action, req_id = ho_match.groups()
+            chatbot = BusinessConfig.query.filter_by(config_id=config_id).first()
+            if not chatbot: return jsonify({"ok": True})
+            
+            req = HandoffRequest.query.get(int(req_id))
+            if req:
+                conv = Conversation.query.filter_by(session_id=req.session_id).first()
+                if conv:
+                    if action == 'accept':
+                        if conv.handoff_status != 'ACTIVE':
+                            conv.handoff_status = 'ACTIVE'
+                            chatbot.active_handoff_session = req.session_id
+                            msg_to_owner = "🤝 **Handoff Accepted!** Tunnel active.\nUse `/r {id} {msg}` to reply or `/end {id}` to finish."
+                            conv.add_message("assistant", "✅ **Connection successful!** A real person has joined the chat. How can we help you?", deduplicate=True)
+                            conv.agent_response_pending = False
+                            db.session.commit()
+                            answer_telegram_callback(chatbot.telegram_bot_token, callback_id, "Accepted")
+                            send_telegram_notification(chatbot.telegram_bot_token, chatbot.telegram_chat_id, msg_to_owner)
+                        else:
+                            answer_telegram_callback(chatbot.telegram_bot_token, callback_id, "Already active")
+                    else:
+                        if conv.handoff_status is not None:
+                            conv.handoff_status = None
+                            msg_to_owner = "❌ Handoff Declined."
+                            conv.add_message("assistant", "I'm sorry, no person is available right now. Please try again later.", deduplicate=True)
+                            db.session.commit()
+                            answer_telegram_callback(chatbot.telegram_bot_token, callback_id, "Declined")
+                            send_telegram_notification(chatbot.telegram_bot_token, chatbot.telegram_chat_id, msg_to_owner)
         
-        # Update appointment status
-        appointment = Appointment.query.get(apt_id)
-        if not appointment:
-            # Answer callback to remove spinner
-            answer_telegram_callback(chatbot.telegram_bot_token, callback_id, "Appointment not found")
-            return jsonify({"ok": True})
-        
-        new_status = 'approved' if action == 'approve' else 'declined'
-        appointment.status = new_status
-        appointment.updated_at = datetime.utcnow()
-        db.session.commit()
-        
-        # Answer the callback query
-        status_text = '✅ Approved' if action == 'approve' else '❌ Declined'
-        answer_telegram_callback(chatbot.telegram_bot_token, callback_id, f"Appointment {status_text}!")
-        
-        # Update the original Telegram message to show the result
-        if appointment.telegram_message_id:
-            update_msg = (f"📅 <b>Appointment #{apt_id} — {status_text}</b>\n\n"
-                          f"👤 Name: {appointment.customer_name}\n"
-                          f"📧 Email: {appointment.customer_email}\n"
-                          f"📱 Mobile: {appointment.customer_mobile}\n"
-                          f"🕐 Time: {appointment.preferred_time}")
-            edit_telegram_message(
-                chatbot.telegram_bot_token,
-                chatbot.telegram_chat_id,
-                appointment.telegram_message_id,
-                update_msg
-            )
+        # 3. HANDLE HANDOFF END CALLBACKS
+        elif ho_end_match:
+            req_id = ho_end_match.group(1)
+            chatbot = BusinessConfig.query.filter_by(config_id=config_id).first()
+            if not chatbot: return jsonify({"ok": True})
+            
+            req = HandoffRequest.query.get(int(req_id))
+            if req:
+                conv = Conversation.query.filter_by(session_id=req.session_id).first()
+                if conv:
+                    conv.handoff_status = None
+                    conv.add_message("assistant", "🔒 **The human agent has left the chat.** AI mode is back on.", deduplicate=True)
+                    if chatbot.active_handoff_session == req.session_id:
+                        chatbot.active_handoff_session = None
+                    db.session.commit()
+                    answer_telegram_callback(chatbot.telegram_bot_token, callback_id, "Chat ended")
+                    send_telegram_notification(chatbot.telegram_bot_token, chatbot.telegram_chat_id, f"🔒 Chat #{req_id} ended.")
         
         return jsonify({"ok": True})
     except Exception as e:
@@ -1574,7 +1623,9 @@ def setup_telegram_webhook(config_id):
         return redirect(url_for('dashboard'))
     
     # Build the webhook URL
-    webhook_url = f"{deployment_url}telegram/webhook/{config_id}"
+    # Ensure deployment_url ends with a slash for proper concatenation
+    base_url = deployment_url if deployment_url.endswith('/') else f"{deployment_url}/"
+    webhook_url = f"{base_url}telegram/webhook/{config_id}"
     
     try:
         url = f"https://api.telegram.org/bot{chatbot.telegram_bot_token}/setWebhook"
