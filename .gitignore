@@ -24,7 +24,7 @@ var/
 *.egg
 
 # Flask
-instance/
+# instance/
 .webassets-cache
 
 # Virtual Environment
@@ -39,7 +39,7 @@ env/
 *.swo
 
 # Database
-*.db
+# *.db
 *.sqlite
 *.sqlite3
 
